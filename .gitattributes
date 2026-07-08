@@ -1,0 +1,6 @@
+# Shell-скрипты всегда с LF (иначе не запустятся на Linux-сервере)
+*.sh text eol=lf
+deploy/nginx.conf text eol=lf
+
+# PowerShell-скрипты оставляем с CRLF (Windows)
+*.ps1 text eol=crlf

@@ -1,0 +1,4 @@
+﻿Сюди покласти файли шрифтів:
+- SquaresBold (заголовки) — .woff2 / .ttf / .otf
+- GoogleSans / ProductSans (текст) — Regular + Medium
+Після цього я підключу їх через @font-face і приберу аналоги.

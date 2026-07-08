@@ -1,0 +1,22 @@
+# --- Исходники / оригиналы (не нужны на сервере) ---
+/*.zip
+/*.mp4
+/Hero image.png
+/design/
+
+# --- Локальные инструменты ---
+/.claude/
+
+# --- Будущий backend ---
+node_modules/
+.env
+.env.*
+!.env.example
+
+# --- Данные (заказы и т.п. — не в git) ---
+/data/*.json
+
+# --- ОС / редакторы ---
+Thumbs.db
+.DS_Store
+*.log
