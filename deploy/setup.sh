@@ -8,7 +8,7 @@
 set -euo pipefail
 
 # --- НАСТРОЙКИ (поправь при необходимости) ---
-REPO_URL="https://github.com/USER/REPO.git"   # <-- ВСТАВЬ ссылку на свой репозиторий
+REPO_URL="https://github.com/proxyl3av3r/ostensacken.git"
 DOMAIN="ostensacken.com"
 APP_DIR="/var/www/ostensacken"
 CERTBOT_EMAIL="rishelie2003@gmail.com"          # почта для Let's Encrypt
