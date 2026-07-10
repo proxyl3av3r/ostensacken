@@ -78,7 +78,7 @@ a { color:inherit; text-decoration:none; }
 .logo { display:inline-flex; align-items:center; }
 .logo__img { height:22px; width:auto; }
 .nav { display:flex; gap:30px; margin-left:auto; }
-.nav a { font-weight:400; font-size:17px; color:var(--ink); position:relative; padding:6px 0; transition:color .2s var(--ease); }
+.nav a { font-weight:400; font-size:1.5rem; color:var(--ink); position:relative; padding:6px 0; transition:color .2s var(--ease); } /* 24px (=1.5rem від кореня 16px) */
 .nav a::after { content:''; position:absolute; left:0; bottom:0; height:2px; width:0; background:var(--accent); transition:width .28s var(--ease); }
 .nav a:hover { color:var(--accent); } .nav a:hover::after { width:100%; }
 .hdr__cta { --bh:48px; padding:0 26px; font-size:16px; }

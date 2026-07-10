@@ -12,7 +12,7 @@ const path = require('path');
 const fs = require('fs');
 const express = require('express');
 const { Resend } = require('resend');
-const { orderEmailHtml, orderEmailText } = require('./lib/email-template');
+const { sellerHtml, sellerText, clientHtml, clientText } = require('./lib/email-template');
 
 const PORT = process.env.PORT || 3000;
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
@@ -36,7 +36,7 @@ function clean(s) {
   var out = "";
   for (var i = 0; i < s.length; i++) {
     var c = s.charCodeAt(i);
-    if (c < 32 || (c >= 127 && c <= 159)) continue;  // C0/C1 керуючі символи
+    if ((c < 32 && c !== 9 && c !== 10) || (c >= 127 && c <= 159)) continue;  // керуючі, крім tab/переносу
     out += s.charAt(i);
   }
   return out.trim();
@@ -47,7 +47,6 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
 function validate(body) {
   const name = clean(body && body.name);
   const emailRaw = clean(body && body.email);
-  const question = clean(body && body.question);
   const phoneDigits = String((body && body.phone) || '').replace(/\D/g, '');
 
   if (!NAME_RE.test(name)) return { error: 'Некоректне імʼя' };
@@ -67,9 +66,26 @@ function validate(body) {
   }
 
   if (emailRaw.length > 60 || !EMAIL_RE.test(emailRaw)) return { error: 'Некоректна пошта' };
-  if (!question || question.length > 1200) return { error: 'Некоректне повідомлення' };
 
-  return { data: { name, phone, email: emailRaw, question } };
+  const cap = (s, n) => clean(s).slice(0, n);
+
+  // Замовлення (структуровані дані з модалки) чи звернення (форма «питання»)?
+  const rawOrder = body && body.order;
+  if (rawOrder && typeof rawOrder === 'object') {
+    const order = {
+      type: cap(rawOrder.type, 40),
+      caliber: cap(rawOrder.caliber, 30),
+      thread: cap(rawOrder.thread, 30),
+      coating: rawOrder.coating === 'Так' ? 'Так' : 'Ні',
+      qty: Math.max(1, Math.min(99, parseInt(rawOrder.qty, 10) || 1))
+    };
+    if (!order.type || !order.caliber || !order.thread) return { error: 'Неповні дані замовлення' };
+    return { data: { kind: 'order', name, phone, email: emailRaw, order, note: cap(body.note, 1000) } };
+  }
+
+  const question = cap(body && body.question, 1200);
+  if (!question) return { error: 'Некоректне повідомлення' };
+  return { data: { kind: 'question', name, phone, email: emailRaw, question } };
 }
 
 /* ---------- Простий rate-limit (in-memory) ---------- */
@@ -129,16 +145,33 @@ app.post('/api/order', async (req, res) => {
     return res.status(503).json({ error: 'Тимчасово не вдалося надіслати. Зателефонуйте нам, будь ласка.' });
   }
 
+  const isOrder = data.kind === 'order';
   try {
-    const { error } = await resend.emails.send({
+    // 1) лист продавцю (головний — від нього залежить success)
+    const seller = await resend.emails.send({
       from: FROM_EMAIL,
       to: TO_EMAIL,
       replyTo: data.email,
-      subject: 'Нове звернення з сайту Osten-Sacken',
-      html: orderEmailHtml(data),
-      text: orderEmailText(data)
+      subject: isOrder ? 'Нове замовлення з сайту Osten-Sacken' : 'Нове звернення з сайту Osten-Sacken',
+      html: sellerHtml(data),
+      text: sellerText(data)
     });
-    if (error) throw new Error(error.message || 'Resend error');
+    if (seller.error) throw new Error(seller.error.message || 'Resend error');
+
+    // 2) лист-підтвердження клієнту (best-effort — не валимо запит, якщо не піде)
+    try {
+      await resend.emails.send({
+        from: FROM_EMAIL,
+        to: data.email,
+        replyTo: TO_EMAIL,
+        subject: isOrder ? 'Ваше замовлення прийнято — Osten-Sacken' : 'Ми отримали ваше звернення — Osten-Sacken',
+        html: clientHtml(data),
+        text: clientText(data)
+      });
+    } catch (e2) {
+      console.error('[order] лист клієнту не надіслано:', e2 && e2.message);
+    }
+
     return res.json({ success: true });
   } catch (e) {
     console.error('[order] помилка надсилання:', e.message);

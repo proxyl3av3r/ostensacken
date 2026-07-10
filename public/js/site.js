@@ -201,7 +201,7 @@
     statusBox.classList.toggle('is-ok', ok); statusBox.classList.toggle('is-err', !ok);
   }
   // прибрати керуючі/невидимі символи (захист від «хитрих» вставок)
-  function clean(s) { return String(s).replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim(); }
+  function clean(s) { s = String(s == null ? '' : s); var o = ''; for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); if ((c < 32 && c !== 9 && c !== 10) || (c >= 127 && c <= 159)) continue; o += s.charAt(i); } return o.trim(); }
 
   // Українські імена: літери (кир/лат), пробіл, апостроф, дефіс
   var NAME_RE = /^[A-Za-zА-Яа-яІіЇїЄєҐґ'’ \-]{2,40}$/;
@@ -247,18 +247,18 @@
   }
 
   // Маска телефону: +38 (0XX) XXX-XX-XX
-  function formatPhone(digits) {
-    var d = digits.replace(/\D/g, '');
-    if (d.indexOf('380') === 0) d = d.slice(2);       // 380… → 0…
-    else if (d.indexOf('80') === 0) d = '0' + d.slice(2);
-    if (d.charAt(0) !== '0') d = '0' + d;              // завжди з 0
+  function formatPhone(v) {
+    var d = String(v).replace(/\D/g, '');
+    // наш префікс «+38 (» сам містить «38» — зрізаємо код країни один раз,
+    // лишається національний номер 0XXXXXXXXX (це і робить видалення робочим)
+    if (d.indexOf('38') === 0) d = d.slice(2);
     d = d.slice(0, 10);
-    var p = d.split('');
-    var out = '+38 (' + (p.slice(0, 3).join(''));
+    if (!d) return '';                                 // порожньо → поле повністю очищається
+    var out = '+38 (' + d.slice(0, 3);
     if (d.length >= 3) out += ')';
-    if (d.length > 3) out += ' ' + p.slice(3, 6).join('');
-    if (d.length > 6) out += '-' + p.slice(6, 8).join('');
-    if (d.length > 8) out += '-' + p.slice(8, 10).join('');
+    if (d.length > 3) out += ' ' + d.slice(3, 6);
+    if (d.length > 6) out += '-' + d.slice(6, 8);
+    if (d.length > 8) out += '-' + d.slice(8, 10);
     return out;
   }
 
@@ -266,12 +266,10 @@
     var phoneInp = form.elements['phone'];
     if (phoneInp) {
       phoneInp.addEventListener('input', function () {
-        var caretEnd = phoneInp.selectionStart === phoneInp.value.length;
         phoneInp.value = formatPhone(phoneInp.value);
+        var L = phoneInp.value.length;
+        try { phoneInp.setSelectionRange(L, L); } catch (e) {}
         phoneInp.closest('.field').classList.remove('is-invalid');
-      });
-      phoneInp.addEventListener('focus', function () {
-        if (!phoneInp.value) phoneInp.value = '+38 (0';
       });
     }
     // прибирати помилку під час вводу

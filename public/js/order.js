@@ -145,15 +145,6 @@
     modal.querySelector('.omodal__dialog').scrollTop = 0;
   }
 
-  function orderLines() {
-    return [
-      'Тип: ' + state.type,
-      'Калібр: ' + state.caliber,
-      'Хід різьби: ' + state.thread,
-      'Гумове покриття: ' + state.coating,
-      'Кількість: ' + state.qty
-    ];
-  }
   function renderSummary() {
     document.getElementById('op-summary-box').innerHTML =
       '<p class="op-summary__name">' + state.type + '</p>' +
@@ -226,7 +217,7 @@
   var statusBox = document.getElementById('oform2-status');
   var confirmBtn = document.getElementById('o-confirm');
 
-  function clean(s) { s = String(s == null ? '' : s); var o = ''; for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); if (c < 32 || (c >= 127 && c <= 159)) continue; o += s.charAt(i); } return o.trim(); }
+  function clean(s) { s = String(s == null ? '' : s); var o = ''; for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); if ((c < 32 && c !== 9 && c !== 10) || (c >= 127 && c <= 159)) continue; o += s.charAt(i); } return o.trim(); }
   var NAME_RE = /^[A-Za-zА-Яа-яІіЇїЄєҐґ'’ \-]{2,40}$/;
   var EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
 
@@ -245,19 +236,23 @@
   }
   function formatPhone(v) {
     var d = phoneDigits(v);
-    if (d.indexOf('380') === 0) d = d.slice(2); else if (d.indexOf('80') === 0) d = '0' + d.slice(2);
-    if (d && d.charAt(0) !== '0') d = '0' + d;
+    if (d.indexOf('38') === 0) d = d.slice(2);   // зрізаємо код країни / наш префікс
     d = d.slice(0, 10); if (!d) return '';
-    var p = d.split(''), out = '+38 (' + p.slice(0, 3).join('');
+    var out = '+38 (' + d.slice(0, 3);
     if (d.length >= 3) out += ')';
-    if (d.length > 3) out += ' ' + p.slice(3, 6).join('');
-    if (d.length > 6) out += '-' + p.slice(6, 8).join('');
-    if (d.length > 8) out += '-' + p.slice(8, 10).join('');
+    if (d.length > 3) out += ' ' + d.slice(3, 6);
+    if (d.length > 6) out += '-' + d.slice(6, 8);
+    if (d.length > 8) out += '-' + d.slice(8, 10);
     return out;
   }
 
   var phoneInp = form.elements['phone'];
-  phoneInp.addEventListener('input', function () { phoneInp.value = formatPhone(phoneInp.value); phoneInp.closest('.field').classList.remove('is-invalid'); });
+  phoneInp.addEventListener('input', function () {
+    phoneInp.value = formatPhone(phoneInp.value);
+    var L = phoneInp.value.length;
+    try { phoneInp.setSelectionRange(L, L); } catch (e) {}
+    phoneInp.closest('.field').classList.remove('is-invalid');
+  });
   form.querySelectorAll('.input').forEach(function (inp) {
     inp.addEventListener('input', function () { inp.closest('.field').classList.remove('is-invalid'); });
   });
@@ -280,13 +275,13 @@
     if (!ok) { if (firstBad) firstBad.focus(); return; }
 
     var note = clean(form.elements['note'].value);
-    var question = 'Замовлення глушника:\n• ' + orderLines().join('\n• ') + (note ? ('\n• Примітка: ' + note) : '');
     var pd = phoneDigits(phone.value);
     var payload = {
       name: clean(name.value),
       phone: pd ? ('+' + pd.replace(/^80/, '380').replace(/^0/, '380')) : '',
       email: ev2,
-      question: question
+      order: { type: state.type, caliber: state.caliber, thread: state.thread, coating: state.coating, qty: state.qty },
+      note: note
     };
 
     confirmBtn.disabled = true;
