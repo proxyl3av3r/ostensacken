@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Адмін-панель — Osten-Sacken</title>
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../css/fonts.css" />
+  <link rel="stylesheet" href="./admin.css" />
+</head>
+<body>
+
+  <!-- Вхід -->
+  <div class="login" id="login" hidden>
+    <form class="login__card" id="login-form">
+      <h1 class="login__brand">OSTEN — SACKEN</h1>
+      <p class="login__sub">Адмін-панель</p>
+      <input type="password" id="password" placeholder="Пароль" autocomplete="current-password" />
+      <button type="submit">Увійти</button>
+      <p class="login__err" id="login-err" hidden></p>
+    </form>
+  </div>
+
+  <!-- Дашборд -->
+  <div class="dash" id="dash" hidden>
+    <div class="dash__top">
+      <div class="dash__brand">OSTEN — SACKEN · Замовлення</div>
+      <div class="dash__actions">
+        <button class="btn" id="refresh">Оновити</button>
+        <button class="btn" id="logout">Вийти</button>
+      </div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="tablewrap" id="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Дата</th><th>Тип</th><th>Клієнт</th><th>Контакти</th><th>Деталі</th><th>Статус</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="empty" hidden>Замовлень поки немає</div>
+  </div>
+
+  <script src="./admin.js"></script>
+</body>
+</html>

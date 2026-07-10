@@ -10,6 +10,7 @@
 require('dotenv').config();
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const express = require('express');
 const { Resend } = require('resend');
 const { sellerHtml, sellerText, clientHtml, clientText } = require('./lib/email-template');
@@ -18,6 +19,8 @@ const PORT = process.env.PORT || 3000;
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 const TO_EMAIL = process.env.TO_EMAIL || '';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const SESSION_SECRET = process.env.SESSION_SECRET || 'change-me-please';
 
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
@@ -177,6 +180,79 @@ app.post('/api/order', async (req, res) => {
     console.error('[order] помилка надсилання:', e.message);
     return res.status(502).json({ error: 'Не вдалося надіслати лист. Зателефонуйте нам, будь ласка.' });
   }
+});
+
+/* =====================================================================
+   АДМІН-ПАНЕЛЬ (/admin) — вхід за паролем + перегляд замовлень
+   ===================================================================== */
+function adminToken() {
+  return crypto.createHmac('sha256', SESSION_SECRET).update('admin:' + ADMIN_PASSWORD).digest('hex');
+}
+function parseCookies(req) {
+  const out = {};
+  (req.headers.cookie || '').split(';').forEach((p) => {
+    const i = p.indexOf('='); if (i < 0) return;
+    out[p.slice(0, i).trim()] = decodeURIComponent(p.slice(i + 1).trim());
+  });
+  return out;
+}
+function safeEqual(a, b) {
+  const ba = Buffer.from(String(a)), bb = Buffer.from(String(b));
+  return ba.length === bb.length && crypto.timingSafeEqual(ba, bb);
+}
+function isAdmin(req) {
+  if (!ADMIN_PASSWORD) return false;
+  const c = parseCookies(req);
+  return !!c.os_admin && safeEqual(c.os_admin, adminToken());
+}
+function requireAdmin(req, res, next) {
+  if (!isAdmin(req)) return res.status(401).json({ error: 'Не авторизовано' });
+  next();
+}
+function readOrders() {
+  try { if (fs.existsSync(ORDERS_FILE)) return JSON.parse(fs.readFileSync(ORDERS_FILE, 'utf8')) || []; } catch (_) {}
+  return [];
+}
+
+// окремий, м'якший ліміт на спроби входу (10 / 10 хв на IP)
+const loginHits = new Map();
+function loginLimited(ip) {
+  const now = Date.now(), win = 10 * 60 * 1000;
+  const arr = (loginHits.get(ip) || []).filter((t) => now - t < win);
+  arr.push(now); loginHits.set(ip, arr);
+  return arr.length > 10;
+}
+
+app.post('/api/admin/login', (req, res) => {
+  if (!ADMIN_PASSWORD) return res.status(503).json({ error: 'Адмінку не налаштовано (ADMIN_PASSWORD у .env)' });
+  if (loginLimited(req.ip)) return res.status(429).json({ error: 'Забагато спроб. Спробуйте пізніше.' });
+  const pw = String((req.body && req.body.password) || '');
+  if (!safeEqual(pw, ADMIN_PASSWORD)) return res.status(401).json({ error: 'Невірний пароль' });
+  const secure = (req.headers['x-forwarded-proto'] === 'https') ? '; Secure' : '';
+  res.setHeader('Set-Cookie', 'os_admin=' + adminToken() + '; HttpOnly; Path=/; SameSite=Lax; Max-Age=' + (60 * 60 * 24 * 7) + secure);
+  res.json({ success: true });
+});
+app.post('/api/admin/logout', (req, res) => {
+  res.setHeader('Set-Cookie', 'os_admin=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0');
+  res.json({ success: true });
+});
+app.get('/api/admin/session', (req, res) => res.json({ authed: isAdmin(req) }));
+
+app.get('/api/admin/orders', requireAdmin, (req, res) => {
+  const list = readOrders().map((o, i) => Object.assign({ index: i, status: o.status || 'Нове' }, o));
+  res.json({ orders: list.reverse() }); // новіші зверху
+});
+app.post('/api/admin/order-status', requireAdmin, (req, res) => {
+  const idx = parseInt(req.body && req.body.index, 10);
+  const allowed = ['Нове', 'В роботі', 'Виконано', 'Скасовано'];
+  const status = String((req.body && req.body.status) || '');
+  if (!allowed.includes(status)) return res.status(400).json({ error: 'Невірний статус' });
+  const list = readOrders();
+  if (!(idx >= 0 && idx < list.length)) return res.status(404).json({ error: 'Замовлення не знайдено' });
+  list[idx].status = status;
+  try { fs.writeFileSync(ORDERS_FILE, JSON.stringify(list, null, 2)); }
+  catch (e) { return res.status(500).json({ error: 'Не вдалося зберегти' }); }
+  res.json({ success: true });
 });
 
 /* ---------- Статика (fallback; на проді її віддає nginx) ---------- */

@@ -1,0 +1,58 @@
+/* Osten-Sacken — адмін-панель (Етап 1: вхід + замовлення) */
+:root{
+  --bg:#FAF9F6; --ink:#010203; --muted:#434343; --panel:#F5F5F5; --white:#fff;
+  --line:#E5E5E5; --line-strong:#A3A3A3; --accent:#E31919; --accent-dark:#C11414;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --font:'Google Sans','Manrope',system-ui,sans-serif;
+  --display:'Squares Bold','Chakra Petch',sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5;}
+button{font-family:var(--font);cursor:pointer;border-radius:0;}
+a{color:var(--accent);text-decoration:none}
+
+/* ---------- Вхід ---------- */
+.login{min-height:100vh;display:grid;place-items:center;padding:24px;}
+.login__card{width:100%;max-width:360px;background:var(--white);border:1px solid var(--line);padding:36px 32px;display:flex;flex-direction:column;gap:16px;}
+.login__brand{font-family:var(--display);font-size:24px;letter-spacing:2px;margin:0;}
+.login__sub{margin:0 0 6px;color:var(--muted);font-size:14px;}
+.login input{height:48px;padding:0 14px;border:2px solid var(--line-strong);background:var(--bg);font-size:16px;border-radius:0;outline:none;}
+.login input:focus{border-color:var(--ink);}
+.login button{height:48px;background:var(--accent);color:var(--bg);border:2px solid var(--accent);font-family:var(--display);font-size:16px;letter-spacing:.04em;transition:background .2s var(--ease);}
+.login button:hover{background:var(--accent-dark);border-color:var(--accent-dark);}
+.login__err{margin:0;color:var(--accent);font-size:14px;}
+
+/* ---------- Дашборд ---------- */
+.dash{max-width:1200px;margin:0 auto;padding:24px;}
+.dash__top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--line-strong);margin-bottom:20px;}
+.dash__brand{font-family:var(--display);font-size:20px;letter-spacing:1.5px;}
+.dash__actions{display:flex;gap:10px;}
+.btn{height:42px;padding:0 18px;border:2px solid var(--ink);background:var(--bg);color:var(--ink);font-weight:600;font-size:14px;transition:all .2s var(--ease);}
+.btn:hover{background:var(--ink);color:var(--bg);}
+.btn--accent{border-color:var(--accent);background:var(--accent);color:var(--bg);}
+.btn--accent:hover{background:var(--accent-dark);border-color:var(--accent-dark);color:var(--bg);}
+
+.stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px;}
+.stat{background:var(--white);border:1px solid var(--line);padding:14px 18px;min-width:120px;}
+.stat b{display:block;font-family:var(--display);font-size:26px;line-height:1;}
+.stat span{color:var(--muted);font-size:13px;}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line-strong);}
+table{width:100%;border-collapse:collapse;min-width:820px;background:var(--white);}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px;}
+th{background:var(--panel);font-weight:600;color:var(--muted);white-space:nowrap;position:sticky;top:0;}
+tr:last-child td{border-bottom:0;}
+.tag{display:inline-block;padding:2px 8px;font-size:12px;font-weight:600;border:1px solid var(--line-strong);}
+.tag--order{background:#FDECEC;border-color:#F3B4B4;color:var(--accent-dark);}
+.tag--question{background:var(--panel);color:var(--muted);}
+.cell-det{font-size:13px;color:var(--ink);}
+.cell-det .k{color:var(--muted);}
+.cell-note{margin-top:6px;padding-left:8px;border-left:2px solid var(--accent);color:var(--muted);white-space:pre-wrap;}
+.contact a{display:block;white-space:nowrap;}
+.when{color:var(--muted);white-space:nowrap;}
+select.status{height:36px;border:2px solid var(--line-strong);background:var(--bg);font-size:13px;border-radius:0;padding:0 6px;}
+select.status[data-s="Виконано"]{border-color:#16A34A;color:#16A34A;}
+select.status[data-s="Скасовано"]{border-color:var(--line-strong);color:var(--muted);}
+select.status[data-s="В роботі"]{border-color:var(--accent);color:var(--accent-dark);}
+.empty{padding:40px;text-align:center;color:var(--muted);border:1px dashed var(--line-strong);}
+[hidden]{display:none!important;}
