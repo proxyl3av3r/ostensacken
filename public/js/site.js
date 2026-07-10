@@ -185,52 +185,8 @@
     }
   })();
 
-  /* ---- Pick type from configurator → сторінка замовлення (order.html) ---- */
-  document.querySelectorAll('[data-pick-type]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var card = btn.closest('.prod');
-      var type = btn.getAttribute('data-pick-type');
-      var coatingBtn = card ? card.querySelector('.toggle__opt.is-on') : null;
-      var coating = coatingBtn ? coatingBtn.getAttribute('data-coating') : 'Ні';
-      var url = './order.html?type=' + encodeURIComponent(type) +
-                '&coating=' + encodeURIComponent(coating);
-      location.href = url;
-    });
-  });
-
-  /* ---- Pick caliber from calibers block → сторінка замовлення (order.html) ---- */
-  document.querySelectorAll('[data-pick-caliber]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var caliber = btn.getAttribute('data-pick-caliber');
-      location.href = './order.html?type=' + encodeURIComponent('Стандартний') +
-                      '&caliber=' + encodeURIComponent(caliber);
-    });
-  });
-
-  /* ---- Повернення зі сторінки замовлення: підставити деталі у форму ---- */
-  (function () {
-    var raw;
-    try { raw = sessionStorage.getItem('os_order'); } catch (e) { return; }
-    if (!raw) return;
-    try { sessionStorage.removeItem('os_order'); } catch (e) {}
-    var data; try { data = JSON.parse(raw); } catch (e) { return; }
-    if (!data || !data.summary) return;
-    var q = document.getElementById('question');
-    if (q) {
-      q.value = data.summary;
-      var field = q.closest('.field'); if (field) field.classList.remove('is-invalid');
-    }
-    var order = document.getElementById('order');
-    if (order) {
-      requestAnimationFrame(function () {
-        order.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    }
-    setTimeout(function () {
-      var name = document.getElementById('name');
-      if (name) name.focus();
-    }, 700);
-  })();
+  /* ---- Кнопки «Замовити» відкривають модалку замовлення (див. order.js) ---- */
+  /*    data-pick-type / data-pick-caliber / data-open-order обробляє order.js    */
 
   /* ---- Feedback form: сувора валідація + санітизація ----
      ВАЖЛИВО (backend): клієнтська валідація — лише для UX. Реальний захист від

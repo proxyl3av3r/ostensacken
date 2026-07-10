@@ -1,74 +1,111 @@
 /* =====================================================================
-   ORDER PAGE (order.html) — конфігуратор замовлення глушника
-   Використовує токени та базові компоненти з site.css (.btn, .container,
-   .hdr, .ftr тощо). Тут — лише специфіка сторінки заказу.
-   Макет: Figma фрейми 4–7 (node 137:1154). Розміри шрифтів адаптовані
-   під масштаб лендінга (container 1460), кольори/форми — 1:1 з макетом.
+   ORDER MODAL — конфігуратор замовлення як оверлей над лендінгом
+   Флоу (за Figma фреймами 4/9/10/11):
+     крок config → крок form (Деталі + контакти) → крок done (успіх)
+   Використовує токени та .btn/.field/.input із site.css.
    ===================================================================== */
 
-/* Відступ під фіксовану шапку */
-.opage { padding-top:82px; }
-
-.order-page { padding:56px 0 96px; }
-.order-page__grid {
-  display:flex; align-items:flex-start; gap:72px;
+/* ---------- Оверлей + матове скло ---------- */
+.omodal {
+  position:fixed; inset:0; z-index:1000;
+  display:flex; align-items:flex-start; justify-content:center;
+  padding:48px 20px; overflow-y:auto;
 }
+.omodal[hidden] { display:none; }
+.omodal__backdrop {
+  position:fixed; inset:0; background:rgba(1,2,3,.5);
+  backdrop-filter:blur(12px) saturate(115%);
+  -webkit-backdrop-filter:blur(12px) saturate(115%);
+  animation:omodal-fade .35s var(--ease);
+}
+.omodal__dialog {
+  position:relative; z-index:1; width:100%; max-width:1180px; margin:auto;
+  background:var(--bg);
+  border:1px solid rgba(255,255,255,.55);
+  box-shadow:0 40px 130px -30px rgba(1,2,3,.72), 0 0 0 1px rgba(1,2,3,.06),
+             inset 0 1px 0 rgba(255,255,255,.4);
+  padding:44px 52px 52px;
+  animation:omodal-in .42s var(--ease);
+}
+@keyframes omodal-fade { from{opacity:0} to{opacity:1} }
+@keyframes omodal-in { from{opacity:0; transform:translateY(18px) scale(.985)} to{opacity:1; transform:none} }
 
-/* ---------- Ліва колонка: галерея ---------- */
-.op-gallery { flex:0 0 auto; width:520px; position:sticky; top:110px;
-  display:flex; flex-direction:column; gap:24px; }
+/* хрестик закриття вікна */
+.omodal__x {
+  position:absolute; top:16px; right:16px; z-index:3;
+  width:44px; height:44px; display:grid; place-items:center;
+  background:none; border:0; cursor:pointer; color:var(--muted); border-radius:0;
+  transition:color .2s var(--ease),background .2s var(--ease);
+}
+.omodal__x:hover { color:var(--accent); background:rgba(1,2,3,.04); }
+.omodal__x svg { width:22px; height:22px; }
+
+body.omodal-open { overflow:hidden; }
+
+/* ---------- Двоколонкова сітка ---------- */
+.order-page__grid { display:flex; align-items:flex-start; gap:56px; }
+
+/* ---------- Ліва колонка: галерея (як картка товару) ---------- */
+.op-gallery { flex:0 0 auto; width:460px; position:sticky; top:0;
+  display:flex; flex-direction:column; gap:20px; }
 
 .op-back {
   display:inline-flex; align-items:center; gap:10px; align-self:flex-start;
-  padding:10px 4px; background:none; border:0; cursor:pointer;
+  padding:8px 4px; background:none; border:0; cursor:pointer;
   font-family:var(--font-body); font-weight:500; font-size:17px; color:var(--ink);
   transition:color .2s var(--ease);
 }
 .op-back:hover { color:var(--accent); }
-.op-back svg { width:18px; height:18px; }
+.op-back svg { width:16px; height:16px; }
 
+/* Рамка фото — у форматі карток товару (aspect 4/5, тонка рамка) */
 .op-figure {
-  position:relative; margin:0; width:100%; aspect-ratio:587/775;
+  position:relative; margin:0; width:100%; aspect-ratio:4/5;
   background:var(--white); border:1px solid var(--line-strong); overflow:hidden;
 }
 .op-figure__track { display:flex; height:100%; transition:transform .5s var(--ease); }
-.op-figure__slide { flex:0 0 100%; height:100%; display:grid; place-items:center; padding:32px; }
+.op-figure__slide { flex:0 0 100%; height:100%; display:grid; place-items:center; padding:26px; }
 .op-figure__slide img { width:auto; max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply; }
+.op-figure__slide--ph {
+  flex-direction:column; color:var(--line-strong); text-align:center; font-size:18px; font-weight:600;
+  background:repeating-linear-gradient(45deg,#f0efec,#f0efec 14px,#eae9e5 14px,#eae9e5 28px);
+}
+.op-figure__slide--ph small { font-weight:400; font-size:13px; }
 
-/* стрілки-навігація (у стилі каруселі лендінга) */
 .op-nav {
   position:absolute; top:50%; transform:translateY(-50%);
-  width:48px; height:52px; display:grid; place-items:center;
+  width:44px; height:50px; display:grid; place-items:center;
   background:var(--bg); border:2px solid var(--accent); color:var(--ink);
   cursor:pointer; z-index:2; transition:background .25s var(--ease),color .25s var(--ease);
 }
 .op-nav:hover { background:var(--accent); color:var(--bg); }
 .op-nav svg { width:8px; height:14px; }
-.op-nav--prev { left:16px; } .op-nav--prev svg { transform:rotate(180deg); }
-.op-nav--next { right:16px; }
+.op-nav--prev { left:14px; } .op-nav--prev svg { transform:rotate(180deg); }
+.op-nav--next { right:14px; }
 .op-nav[hidden] { display:none; }
 
-.op-dots { position:absolute; left:50%; bottom:22px; transform:translateX(-50%);
-  display:flex; gap:10px; z-index:2; }
-.op-dots span { width:10px; height:10px; border-radius:50%; background:var(--step-off); cursor:pointer;
+.op-dots { position:absolute; left:50%; bottom:18px; transform:translateX(-50%);
+  display:flex; gap:9px; z-index:2; }
+.op-dots span { width:9px; height:9px; border-radius:50%; background:var(--step-off); cursor:pointer;
   transition:background .2s var(--ease); }
 .op-dots span.is-active { background:var(--accent); }
 
-/* ---------- Права колонка: панель ---------- */
-.op-panel { flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:44px; }
+/* ---------- Права колонка ---------- */
+.op-panel { flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:40px; }
+.ostep[hidden] { display:none; }
 
-.op-info { display:flex; flex-direction:column; gap:28px; }
-.op-titlebox { display:flex; flex-direction:column; gap:16px; }
+/* Заголовок + опис */
+.op-info { display:flex; flex-direction:column; gap:26px; }
+.op-titlebox { display:flex; flex-direction:column; gap:14px; }
 .op-title { font-family:var(--font-body); font-weight:600; font-size:30px; line-height:1.1; color:var(--ink); margin:0; }
 .op-desc { font-family:var(--font-body); font-weight:400; font-size:18px; line-height:1.4; color:var(--muted); margin:0; max-width:640px; }
 
-/* Блок опцій */
-.op-options { display:flex; flex-direction:column; gap:30px; }
+/* Опції */
+.op-options { display:flex; flex-direction:column; gap:28px; }
 .op-option { display:flex; flex-direction:column; gap:10px; }
 .op-option__label { font-family:var(--font-body); font-weight:500; font-size:16px; color:var(--muted); }
 .op-chips { display:flex; flex-wrap:wrap; gap:14px; align-items:center; }
 
-/* Чіп-кнопка вибору (tertiary) */
 .op-chip {
   font-family:var(--font-body); font-weight:500; font-size:16px; line-height:1;
   padding:11px 16px; background:var(--bg); color:var(--ink);
@@ -78,7 +115,7 @@
 .op-chip:hover { border-color:var(--ink); }
 .op-chip.is-sel { background:var(--ink); color:var(--bg); border-color:var(--ink); }
 
-/* Лічильник кількості */
+/* Лічильник */
 .op-counter { display:flex; align-items:center; }
 .op-counter__btn {
   width:48px; height:48px; display:grid; place-items:center;
@@ -91,24 +128,61 @@
 .op-counter__val {
   width:56px; height:48px; display:grid; place-items:center; margin-left:-2px;
   background:var(--bg); border:2px solid var(--step-off);
-  font-family:var(--font-body); font-weight:500; font-size:18px; color:var(--ink);
-  user-select:none;
+  font-family:var(--font-body); font-weight:500; font-size:18px; color:var(--ink); user-select:none;
 }
 
-/* ---------- Дія: кнопка + підказка ---------- */
-.op-action { display:flex; flex-direction:column; gap:10px; }
+/* Дія (кнопка + підказка) */
+.op-action { display:flex; flex-direction:column; gap:10px; margin-top:32px; }
 .op-order { align-self:flex-start; }
-.op-order:disabled {
-  background:#FFE0E0; border-color:#FFE0E0; color:#FFA0A0; cursor:not-allowed;
-  box-shadow:none; padding-right:26px;
-}
+.op-order:disabled { background:#FFE0E0; border-color:#FFE0E0; color:#FFA0A0; cursor:not-allowed; box-shadow:none; padding-right:26px; }
 .op-order:disabled::after { display:none; }
 .op-order:disabled:hover { background:#FFE0E0; border-color:#FFE0E0; padding-right:26px; }
 .op-hint { font-family:var(--font-body); font-style:italic; font-weight:500; font-size:16px; color:var(--muted); margin:0; }
 .op-hint[hidden] { display:none; }
 
-/* ---------- Таблиця характеристик ---------- */
-.op-features { display:flex; flex-direction:column; gap:22px; max-width:714px; }
+/* ---------- КРОК form: Деталі замовлення + контакти ---------- */
+.op-form-wrap { display:flex; flex-direction:column; gap:22px; }
+.op-summary { display:flex; flex-direction:column; gap:10px; }
+.op-summary__title { font-family:var(--font-body); font-weight:600; font-size:20px; color:var(--ink); margin:0; }
+.op-summary__box {
+  background:var(--panel); border:1px solid var(--line); padding:18px 20px;
+  display:flex; flex-direction:column; gap:6px;
+}
+.op-summary__name { font-family:var(--font-body); font-weight:600; font-size:17px; color:var(--ink); margin:0 0 2px; }
+.op-summary__row { font-family:var(--font-body); font-size:15px; color:var(--muted); margin:0; }
+.op-summary__row b { color:var(--ink); font-weight:600; }
+
+.oform2 { display:flex; flex-direction:column; gap:18px; }
+.oform2 .field { display:flex; flex-direction:column; gap:8px; }
+.op-actions2 { display:flex; gap:14px; flex-wrap:wrap; margin-top:4px; }
+.btn--closeorder { background:var(--bg); color:var(--ink); border-color:var(--line-strong); }
+.btn--closeorder:hover { background:var(--ink); color:var(--bg); border-color:var(--ink); box-shadow:none; }
+.oform2__status { font-family:var(--font-body); font-size:15px; padding:10px 0; }
+.oform2__status.is-err { color:var(--accent); }
+
+/* ---------- КРОК done: плашка успіху ---------- */
+.op-success {
+  position:relative; background:var(--white); border:1px solid var(--line);
+  padding:26px 48px 26px 26px; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;
+  animation:omodal-in .4s var(--ease);
+}
+.op-success__check {
+  width:52px; height:52px; border-radius:50%; border:2px solid #16A34A;
+  display:grid; place-items:center; color:#16A34A;
+}
+.op-success__check svg { width:26px; height:26px; }
+.op-success__title { font-family:var(--font-body); font-weight:600; font-size:19px; color:var(--ink); margin:0; }
+.op-success__text { font-family:var(--font-body); font-size:15px; color:var(--muted); margin:0; max-width:440px; line-height:1.4; }
+.op-success__x {
+  position:absolute; top:14px; right:14px; width:32px; height:32px; display:grid; place-items:center;
+  background:none; border:0; cursor:pointer; color:var(--muted); transition:color .2s var(--ease);
+}
+.op-success__x:hover { color:var(--accent); }
+.op-success__x svg { width:18px; height:18px; }
+.op-success[hidden] { display:none; }
+
+/* ---------- Характеристики ---------- */
+.op-features { display:flex; flex-direction:column; gap:20px; max-width:714px; }
 .op-features__title { font-family:var(--font-body); font-weight:600; font-size:24px; color:var(--ink); margin:0; }
 .op-spectable { border:0; }
 .op-specrow { display:grid; grid-template-columns:1fr 1fr; }
@@ -121,11 +195,12 @@
 /* =====================================================================
    Адаптив
    ===================================================================== */
-@media (max-width:900px){
-  .order-page { padding:32px 0 72px; }
-  .order-page__grid { flex-direction:column; gap:32px; }
-  .op-gallery { position:static; width:100%; max-width:460px; margin-inline:auto; }
-  .op-panel { width:100%; gap:36px; }
+@media (max-width:980px){
+  .omodal { padding:24px 12px; }
+  .omodal__dialog { padding:36px 24px 40px; }
+  .order-page__grid { flex-direction:column; gap:28px; }
+  .op-gallery { position:static; width:100%; max-width:420px; margin-inline:auto; }
+  .op-panel { width:100%; gap:32px; }
   .op-title { font-size:26px; }
 }
 @media (max-width:520px){
@@ -133,4 +208,5 @@
   .op-specrow > div { padding:16px 14px; }
   .op-spec__k, .op-spec__v { font-size:16px; }
   .op-order { align-self:stretch; }
+  .op-actions2 .btn { flex:1 1 auto; }
 }

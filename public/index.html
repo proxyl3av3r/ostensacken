@@ -8,6 +8,7 @@
 
   <link rel="stylesheet" href="./css/fonts.css" />
   <link rel="stylesheet" href="./css/site.css" />
+  <link rel="stylesheet" href="./css/order.css" />
 </head>
 <body>
 
@@ -25,7 +26,7 @@
         <a href="#reviews">Відгуки</a>
         <a href="#order">Контакти</a>
       </nav>
-      <a href="#order" class="btn btn--secondary hdr__cta"><span class="btn__label">Замовити</span></a>
+      <a href="#order" class="btn btn--secondary hdr__cta" data-open-order><span class="btn__label">Замовити</span></a>
       <button class="burger" aria-label="Меню" aria-expanded="false"><span></span><span></span><span></span></button>
     </div>
   </header>
@@ -38,7 +39,7 @@
         <div class="hero__content reveal">
           <h1 class="hero__title">Титанові глушники <span class="accent">під замовлення</span></h1>
           <p class="hero__subtitle">Індивідуальне виготовлення для будь-якого калібру нарізної зброї. Максимальна точність, надійність і бездоганна якість виконання.</p>
-          <a href="#order" class="btn btn--primary btn--lg"><span class="btn__label">Замовити</span></a>
+          <a href="#order" class="btn btn--primary btn--lg" data-open-order><span class="btn__label">Замовити</span></a>
         </div>
         <div class="hero__media reveal reveal--delay">
           <img src="./images/hero-cutout.png" alt="Стрілець із глушником Osten-Sacken" class="hero__img" />
@@ -188,7 +189,7 @@
             <li class="step"><span class="step__num">2</span><div class="step__body"><h3 class="step__title">Заповніть контактні дані</h3><p class="step__desc">Вкажіть ваше ім'я, номер телефону та адресу електронної пошти для зворотного зв'язку.</p></div></li>
             <li class="step"><span class="step__num">3</span><div class="step__body"><h3 class="step__title">Підтвердьте замовлення</h3><p class="step__desc">Перевірте правильність введених даних та натисніть кнопку «Замовити». Після отримання заявки ми зв'яжемося з вами для підтвердження та уточнення всіх деталей.</p></div></li>
           </ol>
-          <a href="#order" class="btn btn--primary btn--lg"><span class="btn__label">Оформити замовлення</span></a>
+          <a href="#order" class="btn btn--primary btn--lg" data-open-order><span class="btn__label">Оформити замовлення</span></a>
         </div>
         </div>
       </div>
@@ -360,6 +361,166 @@
     </div>
   </footer>
 
+  <!-- ============ ORDER MODAL (оверлей замовлення) ============ -->
+  <div class="omodal" id="order-modal" hidden role="dialog" aria-modal="true" aria-label="Замовлення глушника">
+    <div class="omodal__backdrop" data-omodal-close></div>
+    <div class="omodal__dialog" role="document">
+      <button class="omodal__x" type="button" data-omodal-close aria-label="Закрити">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+
+      <div class="order-page__grid">
+
+        <!-- Ліва колонка: галерея -->
+        <div class="op-gallery">
+          <button type="button" class="op-back" id="op-back">
+            <svg viewBox="0 0 8 14" fill="none" aria-hidden="true"><path d="M7 1 1 7l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Назад</span>
+          </button>
+          <figure class="op-figure">
+            <div class="op-figure__track" id="op-track"></div>
+            <button class="op-nav op-nav--prev" type="button" data-prev aria-label="Попереднє фото" hidden>
+              <svg viewBox="0 0 8 14" fill="none" aria-hidden="true"><path d="M1 1l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="op-nav op-nav--next" type="button" data-next aria-label="Наступне фото" hidden>
+              <svg viewBox="0 0 8 14" fill="none" aria-hidden="true"><path d="M1 1l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="op-dots" id="op-dots"></div>
+          </figure>
+        </div>
+
+        <!-- Права колонка -->
+        <div class="op-panel">
+
+          <!-- Плашка успіху (крок done) -->
+          <div class="op-success" id="op-success" hidden>
+            <button type="button" class="op-success__x" data-omodal-close aria-label="Закрити">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <span class="op-success__check">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <h3 class="op-success__title">Замовлення успішно зроблено</h3>
+            <p class="op-success__text">Ми з вами зв'яжемось як можна швидше для уточнення деталей та ціни</p>
+          </div>
+
+          <!-- КРОК config: конфігуратор -->
+          <div class="ostep ostep--config" id="ostep-config">
+            <div class="op-info">
+              <div class="op-titlebox">
+                <h2 class="op-title" id="op-title">Стандартний</h2>
+                <p class="op-desc" id="op-desc">Класичне рішення для більшості видів нарізної зброї. Поєднує ефективне зниження шуму, просте встановлення та високу надійність.</p>
+              </div>
+              <div class="op-options">
+                <div class="op-option">
+                  <span class="op-option__label">Тип глушника</span>
+                  <div class="op-chips" data-group="type" role="group" aria-label="Тип глушника">
+                    <button type="button" class="op-chip is-sel" data-value="Стандартний">Стандартний</button>
+                    <button type="button" class="op-chip" data-value="Інтегрований">Інтегрований</button>
+                  </div>
+                </div>
+                <div class="op-option">
+                  <span class="op-option__label">Калібр</span>
+                  <div class="op-chips" data-group="caliber" role="group" aria-label="Калібр">
+                    <button type="button" class="op-chip" data-value=".22 LR">.22 LR</button>
+                    <button type="button" class="op-chip" data-value=".223">.223</button>
+                    <button type="button" class="op-chip" data-value="5.45">5.45</button>
+                    <button type="button" class="op-chip" data-value=".30">.30</button>
+                    <button type="button" class="op-chip" data-value=".338 LM">.338 LM</button>
+                    <button type="button" class="op-chip" data-value=".338 WM">.338 WM</button>
+                  </div>
+                </div>
+                <div class="op-option">
+                  <span class="op-option__label">Хід різьби</span>
+                  <div class="op-chips" data-group="thread" role="group" aria-label="Хід різьби">
+                    <button type="button" class="op-chip" data-value='1/2" 28 UNEF'>1/2" 28 UNEF</button>
+                    <button type="button" class="op-chip" data-value='9/16"24'>9/16"24</button>
+                    <button type="button" class="op-chip" data-value='1/2"20'>1/2"20</button>
+                    <button type="button" class="op-chip" data-value='5/8"24'>5/8"24</button>
+                    <button type="button" class="op-chip" data-value="14х1">14х1</button>
+                    <button type="button" class="op-chip" data-value="15х1">15х1</button>
+                    <button type="button" class="op-chip" data-value="16х1">16х1</button>
+                    <button type="button" class="op-chip" data-value="17х1">17х1</button>
+                    <button type="button" class="op-chip" data-value="18х1">18х1</button>
+                    <button type="button" class="op-chip" data-value="24 х 1.5">24 х 1.5</button>
+                    <button type="button" class="op-chip" data-value='3/4"24'>3/4"24</button>
+                    <button type="button" class="op-chip" data-value='3/4"20'>3/4"20</button>
+                    <button type="button" class="op-chip" data-value="Індивідуально">Індивідуально</button>
+                  </div>
+                </div>
+                <div class="op-option">
+                  <span class="op-option__label" id="op-coating-label">Гумове покриття (100г до ваги)</span>
+                  <div class="op-chips" data-group="coating" role="group" aria-labelledby="op-coating-label">
+                    <button type="button" class="op-chip" data-value="Так">Так</button>
+                    <button type="button" class="op-chip is-sel" data-value="Ні">Ні</button>
+                  </div>
+                </div>
+                <div class="op-option">
+                  <span class="op-option__label">Кількість</span>
+                  <div class="op-counter" id="op-counter">
+                    <button type="button" class="op-counter__btn" data-step="-1" aria-label="Зменшити">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                    <div class="op-counter__val" id="op-qty" aria-live="polite">1</div>
+                    <button type="button" class="op-counter__btn" data-step="1" aria-label="Збільшити">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="op-action">
+              <button type="button" class="btn btn--primary op-order" id="op-order" disabled><span class="btn__label">Замовити</span></button>
+              <p class="op-hint" id="op-hint">Оберіть калібр та хід різьби*</p>
+            </div>
+          </div>
+
+          <!-- КРОК form: деталі + контакти -->
+          <div class="ostep ostep--form op-form-wrap" id="ostep-form" hidden>
+            <div class="op-summary">
+              <h3 class="op-summary__title">Деталі замовлення</h3>
+              <div class="op-summary__box" id="op-summary-box"><!-- заповнює order.js --></div>
+            </div>
+            <form class="oform2" id="oform2" novalidate>
+              <div class="field">
+                <label class="field__label" for="o-name">Ім'я <span class="req">*</span></label>
+                <input id="o-name" name="name" class="input" type="text" placeholder="Ваше ім'я" maxlength="40" autocomplete="name" />
+                <p class="field__err">Це поле обов'язкове для заповнення</p>
+              </div>
+              <div class="field">
+                <label class="field__label" for="o-phone">Телефон</label>
+                <input id="o-phone" name="phone" class="input" type="tel" placeholder="Ваш номер телефону" maxlength="19" autocomplete="tel" />
+                <p class="field__err">Некоректний номер телефону</p>
+              </div>
+              <div class="field">
+                <label class="field__label" for="o-email">Пошта <span class="req">*</span></label>
+                <input id="o-email" name="email" class="input" type="email" placeholder="Ваша електронна пошта" maxlength="60" autocomplete="email" />
+                <p class="field__err">Це поле обов'язкове для заповнення</p>
+              </div>
+              <div class="field">
+                <label class="field__label" for="o-note">Примітка до замовлення</label>
+                <textarea id="o-note" name="note" class="input input--area" placeholder="Примітка" maxlength="1000"></textarea>
+              </div>
+              <div class="op-actions2">
+                <button type="submit" class="btn btn--primary" id="o-confirm"><span class="btn__label">Підтвердити</span></button>
+                <button type="button" class="btn btn--closeorder" id="o-close"><span class="btn__label">Закрити</span></button>
+              </div>
+              <div class="oform2__status" id="oform2-status" hidden></div>
+            </form>
+          </div>
+
+          <!-- Характеристики (видно на кроках config і form) -->
+          <div class="op-features" id="op-features">
+            <h3 class="op-features__title">Характеристики</h3>
+            <div class="op-spectable" id="op-specs"><!-- заповнює order.js --></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./js/order.js"></script>
   <script src="./js/site.js"></script>
 </body>
 </html>

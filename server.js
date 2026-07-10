@@ -51,19 +51,23 @@ function validate(body) {
   const phoneDigits = String((body && body.phone) || '').replace(/\D/g, '');
 
   if (!NAME_RE.test(name)) return { error: 'Некоректне імʼя' };
-  const phoneOk =
-    (phoneDigits.length === 12 && phoneDigits.startsWith('380')) ||
-    (phoneDigits.length === 11 && phoneDigits.startsWith('80')) ||
-    (phoneDigits.length === 10 && phoneDigits.startsWith('0'));
-  if (!phoneOk) return { error: 'Некоректний номер телефону' };
+
+  // Телефон необовʼязковий; якщо вказаний — має бути валідним UA-форматом
+  let phone = '';
+  if (phoneDigits) {
+    const phoneOk =
+      (phoneDigits.length === 12 && phoneDigits.startsWith('380')) ||
+      (phoneDigits.length === 11 && phoneDigits.startsWith('80')) ||
+      (phoneDigits.length === 10 && phoneDigits.startsWith('0'));
+    if (!phoneOk) return { error: 'Некоректний номер телефону' };
+    let d = phoneDigits;
+    if (d.length === 10) d = '38' + d;       // 0XXXXXXXXX → 380XXXXXXXXX
+    else if (d.length === 11) d = '3' + d;   // 80XXXXXXXXX → 380XXXXXXXXX
+    phone = '+' + d;
+  }
+
   if (emailRaw.length > 60 || !EMAIL_RE.test(emailRaw)) return { error: 'Некоректна пошта' };
   if (!question || question.length > 1200) return { error: 'Некоректне повідомлення' };
-
-  // Нормалізуємо телефон у +380XXXXXXXXX
-  let d = phoneDigits;
-  if (d.length === 10) d = '38' + d;         // 0XXXXXXXXX → 380XXXXXXXXX
-  else if (d.length === 11) d = '3' + d;     // 80XXXXXXXXX → 380XXXXXXXXX
-  const phone = '+' + d;
 
   return { data: { name, phone, email: emailRaw, question } };
 }
