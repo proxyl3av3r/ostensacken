@@ -1,95 +1,95 @@
-# Деплой ostensacken.com (статика через Nginx)
+# Деплой ostensacken.com (статика + Node-бэкенд для заказов на почту)
 
-Задача этого этапа — просто поднять лендинг. Backend/админку подключим позже.
-Схема: **GitHub-репозиторий → `git clone` на VPS → Nginx отдаёт `public/` → HTTPS через Certbot.**
+Схема: **GitHub → `git clone` на VPS → Node/Express (PM2) принимает заявки и шлёт письмо через Resend → Nginx отдаёт статику и проксирует `/api/` на Node → HTTPS (Certbot).**
+
+- Форма на сайте шлёт `POST /api/order` → сервер валидирует, сохраняет копию в `data/orders.json` и отправляет **письмо продавцу** через Resend.
+- Заказ со страницы `order.html` попадает в поле «Ваше питання» и уходит тем же письмом.
 
 ---
 
-## Часть A. Запушить проект на GitHub (делается локально, на Windows)
+## Часть 0. Resend (почта) — сделать один раз
 
-> Выполняется один раз. Дальнейшие обновления сайта — просто `git push` отсюда и `git pull` на сервере.
+1. Зарегистрируйся на https://resend.com.
+2. **API Keys → Create** → скопируй ключ (`re_...`).
+3. Для теста этого достаточно: письма пойдут с `onboarding@resend.dev` и придут **только на почту владельца аккаунта Resend**.
+4. Чтобы письма шли с `noreply@ostensacken.com` — **Domains → Add domain `ostensacken.com`**, добавь показанные DNS-записи (SPF/DKIM) у регистратора, дождись Verified. Тогда в `.env` поставь `FROM_EMAIL=Osten-Sacken <noreply@ostensacken.com>`.
 
-Репозиторий: `https://github.com/proxyl3av3r/ostensacken.git`. Это уже сделано с этой машины —
-раздел оставлен как справка. Если делать заново вручную, команды такие:
+---
 
+## Часть A. Пуш на GitHub (локально, Windows) — уже настроено
+
+Репозиторий: `https://github.com/proxyl3av3r/ostensacken.git`. Обновления:
 ```bash
 cd "C:/Users/klebold/Documents/claude/ostensacken.com"
-git init
-git add .
-git commit -m "Initial: static landing"
-git branch -M main
-git remote add origin https://github.com/proxyl3av3r/ostensacken.git
-git push -u origin main
-```
-
-При `git push` GitHub попросит логин — вставь **Personal Access Token** вместо пароля
-(GitHub → Settings → Developer settings → Personal access tokens → Generate, дать право `repo`).
-
----
-
-## Часть B. Настройка сервера (по SSH, на VPS Ubuntu)
-
-### 1. Зайти на сервер
-```bash
-ssh root@<IP_СЕРВЕРА>
-```
-
-### 2. Вариант «одной командой» (проще)
-На сервере:
-```bash
-git clone https://github.com/proxyl3av3r/ostensacken.git /var/www/ostensacken
-bash /var/www/ostensacken/deploy/setup.sh
-```
-URL репозитория уже вписан в скрипт — редактировать ничего не нужно.
-Скрипт сам поставит nginx + certbot, применит конфиг и выпустит HTTPS. После — открой `https://ostensacken.com`.
-
-### 3. Вариант «вручную по шагам» (если хочешь контролировать)
-
-```bash
-# 3.1 Пакеты
-apt update && apt install -y nginx git certbot python3-certbot-nginx
-
-# 3.2 Клон репозитория
-git clone https://github.com/proxyl3av3r/ostensacken.git /var/www/ostensacken
-
-# 3.3 Nginx-конфиг
-cp /var/www/ostensacken/deploy/nginx.conf /etc/nginx/sites-available/ostensacken.com
-ln -sf /etc/nginx/sites-available/ostensacken.com /etc/nginx/sites-enabled/ostensacken.com
-rm -f /etc/nginx/sites-enabled/default
-
-# 3.4 Проверка и запуск
-nginx -t
-systemctl reload nginx
-
-# 3.5 HTTPS (Let's Encrypt). Домен уже должен указывать A-записью на этот сервер!
-certbot --nginx -d ostensacken.com -d www.ostensacken.com --redirect -m rishelie2003@gmail.com --agree-tos --non-interactive
-```
-
-Проверь: открой `http://ostensacken.com` (должен редиректить на https).
-
----
-
-## Часть C. Как обновлять сайт потом
-
-**Локально (Windows):** внёс правки → 
-```bash
 git add . && git commit -m "что изменил" && git push
 ```
 
-**На сервере:**
+---
+
+## Часть B. Первый деплой на сервере (Ubuntu, по SSH)
+
 ```bash
-cd /var/www/ostensacken && git pull
+ssh root@<IP_СЕРВЕРА>
+
+# 1. Клонируем репозиторий
+git clone https://github.com/proxyl3av3r/ostensacken.git /var/www/ostensacken
+cd /var/www/ostensacken
+
+# 2. Создаём и заполняем .env (ключ Resend, почты)
+cp .env.example .env
+nano .env        # впиши RESEND_API_KEY, FROM_EMAIL, TO_EMAIL → Ctrl+O, Enter, Ctrl+X
+
+# 3. Запускаем автоскрипт (Node + PM2 + Nginx + HTTPS)
+bash deploy/setup.sh
 ```
-Nginx подхватит новые файлы сразу (статика, перезапуск не нужен).
+
+Скрипт: поставит Node 20, nginx, certbot; `npm install`; запустит `server.js` под PM2; применит nginx-конфиг; выпустит HTTPS.
+DNS `ostensacken.com` (и `www`) должен уже указывать A-записью на этот сервер — иначе certbot не пройдёт.
+
+После — проверь:
+```bash
+curl -s http://127.0.0.1:3000/api/health      # {"ok":true,"resend":true,"to":true}
+```
+и открой **https://ostensacken.com**, отправь тестовую заявку через форму.
+
+### Ручные шаги (если не через скрипт) — кратко
+```bash
+apt update && apt install -y nginx git certbot python3-certbot-nginx curl
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt install -y nodejs
+cd /var/www/ostensacken && npm install --omit=dev
+npm install -g pm2 && pm2 start server.js --name ostensacken && pm2 save
+pm2 startup systemd -u root --hp /root      # выполни команду, которую он напечатает
+cp deploy/nginx.conf /etc/nginx/sites-available/ostensacken.com
+ln -sf /etc/nginx/sites-available/ostensacken.com /etc/nginx/sites-enabled/ostensacken.com
+rm -f /etc/nginx/sites-enabled/default && nginx -t && systemctl reload nginx
+certbot --nginx -d ostensacken.com -d www.ostensacken.com --redirect -m rishelie2003@gmail.com --agree-tos --non-interactive
+```
 
 ---
 
-## Проверки, если что-то не так
+## Часть C. Обновления потом
+
+**Локально:** `git push`.
+**На сервере:**
+```bash
+cd /var/www/ostensacken
+git pull
+npm install --omit=dev      # только если менялись зависимости (package.json)
+pm2 restart ostensacken     # перечитать код/.env; статика подхватится и без этого
+```
+
+Изменил только `.env`? → `pm2 restart ostensacken --update-env`.
+
+---
+
+## Диагностика
 
 | Симптом | Что смотреть |
 |---|---|
-| Сайт не открывается | `nginx -t` (ошибки конфига), `systemctl status nginx` |
-| 404 на всё | правильный ли `root` в конфиге, есть ли `/var/www/ostensacken/public/index.html` |
-| Домен не резолвится | DNS A-запись `ostensacken.com` → IP сервера (проверь `ping ostensacken.com`) |
-| Certbot падает | домен ещё не указывает на сервер / закрыт порт 80 |
-| Firewall | `ufw allow 'Nginx Full'` (если ufw включён) |
+| Форма пишет «Не вдалося надіслати» | `pm2 logs ostensacken` — ошибка Resend (ключ/FROM_EMAIL/домен) |
+| Письмо не приходит | до верификации домена шлёт только на почту владельца Resend; проверь `TO_EMAIL` и спам |
+| `/api/*` отдаёт 502 | Node не запущен: `pm2 status`, `pm2 restart ostensacken` |
+| Сайт не открывается | `nginx -t`, `systemctl status nginx` |
+| Домен не резолвится | A-запись `ostensacken.com` → IP сервера (`ping ostensacken.com`) |
+| Заказы (бэкап) | `cat /var/www/ostensacken/data/orders.json` |
+| Firewall | `ufw allow 'Nginx Full'` |
