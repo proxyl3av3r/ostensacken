@@ -39,11 +39,11 @@
       <div class="container hero__inner">
         <div class="hero__content reveal">
           <h1 class="hero__title">Титанові глушники <span class="accent">під замовлення</span></h1>
-          <p class="hero__subtitle">Індивідуальне виготовлення для будь-якого калібру нарізної зброї. Максимальна точність, надійність і бездоганна якість виконання.</p>
+          <p class="hero__subtitle" data-text="hero_subtitle">Індивідуальне виготовлення для будь-якого калібру нарізної зброї. Максимальна точність, надійність і бездоганна якість виконання.</p>
           <a href="#order" class="btn btn--primary btn--lg" data-open-order><span class="btn__label">Замовити</span></a>
         </div>
         <div class="hero__media reveal reveal--delay">
-          <img src="./images/hero-cutout.png" alt="Стрілець із глушником Osten-Sacken" class="hero__img" />
+          <img src="./images/hero-cutout.png" alt="Стрілець із глушником Osten-Sacken" class="hero__img" data-img="hero" />
         </div>
       </div>
     </section>
@@ -67,7 +67,7 @@
           <article class="prod reveal" data-type="Стандартний">
             <div class="prod__media" data-carousel>
               <div class="prod__track">
-                <div class="prod__slide"><img src="./images/supp-standard-1.png" alt="Стандартний титановий глушник" /></div>
+                <div class="prod__slide"><img src="./images/supp-standard-1.png" alt="Стандартний титановий глушник" data-img="supp-standard" /></div>
                 <div class="prod__slide prod__slide--ph"><span>Фото 2<br><small>додасть адміністратор</small></span></div>
                 <div class="prod__slide prod__slide--ph"><span>Фото 3<br><small>додасть адміністратор</small></span></div>
               </div>
@@ -146,11 +146,11 @@
       <div class="container">
         <h2 class="section__title reveal">Сумісні з усіма популярними <span class="accent">калібрами</span></h2>
         <div class="ammo-row reveal" id="ammo-row">
-          <figure class="ammo"><figcaption>.22 LR</figcaption><div class="ammo__img"><img src="./images/ammo-22lr.png" alt="Зброя калібру .22 LR" /></div><button class="btn btn--primary ammo__cta" data-pick-caliber=".22 LR"><span class="btn__label">Замовити</span></button></figure>
-          <figure class="ammo ammo--flip"><figcaption>.223</figcaption><div class="ammo__img"><img src="./images/ammo-223.png" alt="Зброя калібру .223" /></div><button class="btn btn--primary ammo__cta" data-pick-caliber=".223 Rem"><span class="btn__label">Замовити</span></button></figure>
-          <figure class="ammo"><figcaption>5.45</figcaption><div class="ammo__img"><img src="./images/ammo-545.png" alt="Зброя калібру 5.45" /></div><button class="btn btn--primary ammo__cta" data-pick-caliber="5.45"><span class="btn__label">Замовити</span></button></figure>
-          <figure class="ammo"><figcaption>.30</figcaption><div class="ammo__img"><img src="./images/ammo-30.png" alt="Зброя калібру .30" /></div><button class="btn btn--primary ammo__cta" data-pick-caliber=".30 Cal"><span class="btn__label">Замовити</span></button></figure>
-          <figure class="ammo"><figcaption>338 LM/WM</figcaption><div class="ammo__img"><img src="./images/ammo-338.png" alt="Зброя калібру .338 LM/WM" /></div><button class="btn btn--primary ammo__cta" data-pick-caliber=".338"><span class="btn__label">Замовити</span></button></figure>
+          <figure class="ammo"><figcaption>.22 LR</figcaption><div class="ammo__img"><img src="./images/ammo-22lr.png" alt="Зброя калібру .22 LR" data-img="ammo-22lr" /></div><button class="btn btn--primary ammo__cta" data-pick-caliber=".22 LR"><span class="btn__label">Замовити</span></button></figure>
+          <figure class="ammo ammo--flip"><figcaption>.223</figcaption><div class="ammo__img"><img src="./images/ammo-223.png" alt="Зброя калібру .223" data-img="ammo-223" /></div><button class="btn btn--primary ammo__cta" data-pick-caliber=".223 Rem"><span class="btn__label">Замовити</span></button></figure>
+          <figure class="ammo"><figcaption>5.45</figcaption><div class="ammo__img"><img src="./images/ammo-545.png" alt="Зброя калібру 5.45" data-img="ammo-545" /></div><button class="btn btn--primary ammo__cta" data-pick-caliber="5.45"><span class="btn__label">Замовити</span></button></figure>
+          <figure class="ammo"><figcaption>.30</figcaption><div class="ammo__img"><img src="./images/ammo-30.png" alt="Зброя калібру .30" data-img="ammo-30" /></div><button class="btn btn--primary ammo__cta" data-pick-caliber=".30 Cal"><span class="btn__label">Замовити</span></button></figure>
+          <figure class="ammo"><figcaption>338 LM/WM</figcaption><div class="ammo__img"><img src="./images/ammo-338.png" alt="Зброя калібру .338 LM/WM" data-img="ammo-338" /></div><button class="btn btn--primary ammo__cta" data-pick-caliber=".338"><span class="btn__label">Замовити</span></button></figure>
         </div>
       </div>
     </section>
@@ -159,7 +159,7 @@
     <section class="pricing section" id="pricing">
       <div class="container">
         <h2 class="section__title reveal">Актуальна <span class="accent">вартість</span></h2>
-        <div class="ptable reveal">
+        <div class="ptable reveal" data-prices>
           <div class="prow prow--head">
             <div class="pcell">Калібр</div>
             <div class="pcell">Стандартний <span class="pcell__note">(від зрізу ствола)</span></div>
@@ -182,7 +182,7 @@
         </div>
         <div class="steps-sec__inner">
         <div class="steps-sec__media reveal">
-          <img src="./images/rifle-cutout.png" alt="Гвинтівка з глушником" class="steps-sec__img" />
+          <img src="./images/rifle-cutout.png" alt="Гвинтівка з глушником" class="steps-sec__img" data-img="steps" />
         </div>
         <div class="steps-sec__text reveal reveal--delay">
           <ol class="steps">
@@ -208,14 +208,14 @@
               <span class="about__cross about__cross--h"></span>
               <span class="about__cross about__cross--v"></span>
             </div>
-            <img src="./images/about-soldier.png" alt="Стрілець Osten-Sacken" class="about__img" />
+            <img src="./images/about-soldier.png" alt="Стрілець Osten-Sacken" class="about__img" data-img="about" />
           </div>
           <div class="about__content">
             <h3 class="about__brand">osten - sacken</h3>
-            <p class="about__text">Ми спеціалізуємося на індивідуальному виготовленні титанових глушників для нарізної зброї. Кожен виріб проєктується відповідно до параметрів зброї та вимог замовника, проходить контроль якості й створюється з акцентом на ефективність, довговічність і бездоганне виконання.</p>
+            <p class="about__text" data-text="about_text">Ми спеціалізуємося на індивідуальному виготовленні титанових глушників для нарізної зброї. Кожен виріб проєктується відповідно до параметрів зброї та вимог замовника, проходить контроль якості й створюється з акцентом на ефективність, довговічність і бездоганне виконання.</p>
             <div class="contacts contacts--light">
-              <a href="mailto:info@ostensacken.com" class="contact"><img src="./images/icon-mail.svg" class="contact__ico" alt="" /> info@ostensacken.com</a>
-              <a href="tel:+380507770238" class="contact"><img src="./images/icon-phone.svg" class="contact__ico" alt="" /> +380-50-777-0238</a>
+              <a href="mailto:info@ostensacken.com" class="contact" data-contact="email"><img src="./images/icon-mail.svg" class="contact__ico" alt="" /> <span data-contact-text>info@ostensacken.com</span></a>
+              <a href="tel:+380507770238" class="contact" data-contact="phone"><img src="./images/icon-phone.svg" class="contact__ico" alt="" /> <span data-contact-text>+380-50-777-0238</span></a>
             </div>
           </div>
         </div>
@@ -335,7 +335,7 @@
     <section class="faq section" id="faq">
       <div class="container">
         <h2 class="section__title reveal">Часті <span class="accent">питання</span></h2>
-        <div class="faq__list reveal">
+        <div class="faq__list reveal" data-faq>
           <details class="faq__item"><summary class="faq__q">Чи виготовляєте ви глушники під індивідуальні параметри?</summary><div class="faq__a">Так, ми можемо виготовити глушник під конкретний калібр, різьбу та вимоги замовника. Індивідуальні замовлення обговорюються окремо.</div></details>
           <details class="faq__item"><summary class="faq__q">У чому різниця між стандартним та інтегрованим глушником?</summary><div class="faq__a">Стандартний глушник встановлюється на дулову частину зброї, тоді як інтегрований є частиною конструкції ствола і забезпечує більш компактне рішення.</div></details>
           <details class="faq__item"><summary class="faq__q">З яких матеріалів виготовляються глушники?</summary><div class="faq__a">Ми використовуємо високоякісні матеріали, включаючи титан, що забезпечує міцність, легкість та довговічність виробу.</div></details>
@@ -348,12 +348,12 @@
 
   <!-- ============ FOOTER ============ -->
   <footer class="ftr">
-    <img src="./images/footer-weapon-cutout.png" alt="" class="ftr__weapon" aria-hidden="true" />
+    <img src="./images/footer-weapon-cutout.png" alt="" class="ftr__weapon" aria-hidden="true" data-img="footer" />
     <div class="container ftr__inner">
       <a href="#top" class="logo logo--ftr"><img src="./images/logo.svg" alt="Osten-Sacken" class="logo__img" /></a>
       <div class="contacts contacts--light ftr__contacts">
-        <a href="mailto:info@ostensacken.com" class="contact"><img src="./images/icon-mail.svg" class="contact__ico" alt="" /> info@ostensacken.com</a>
-        <a href="tel:+380507770238" class="contact"><img src="./images/icon-phone.svg" class="contact__ico" alt="" /> +380-50-777-0238</a>
+        <a href="mailto:info@ostensacken.com" class="contact" data-contact="email"><img src="./images/icon-mail.svg" class="contact__ico" alt="" /> <span data-contact-text>info@ostensacken.com</span></a>
+        <a href="tel:+380507770238" class="contact" data-contact="phone"><img src="./images/icon-phone.svg" class="contact__ico" alt="" /> <span data-contact-text>+380-50-777-0238</span></a>
       </div>
       <nav class="ftr__nav" aria-label="Нижня навігація">
         <a href="#types">Глушники</a><a href="#compat">Калібри</a><a href="#pricing">Вартість</a><a href="#steps">Як замовити?</a><a href="#reviews">Відгуки</a><a href="#order">Контакти</a>

@@ -1,6 +1,8 @@
-/* Osten-Sacken — адмін-панель (Етап 1) */
+/* Osten-Sacken — адмін-панель (замовлення + контент) */
 (function () {
   'use strict';
+
+  var CSRF = null; // токен поточної сесії
 
   var loginView = document.getElementById('login');
   var dashView = document.getElementById('dash');
@@ -10,8 +12,15 @@
   var empty = document.getElementById('empty');
   var tablewrap = document.getElementById('tablewrap');
   var statsBox = document.getElementById('stats');
+  var toastEl = document.getElementById('toast');
 
   var STATUSES = ['Нове', 'В роботі', 'Виконано', 'Скасовано'];
+  var IMAGE_LABELS = {
+    hero: 'Hero — головне фото', 'supp-standard': 'Стандартний глушник (карусель)',
+    about: 'Фото «Про нас»', steps: 'Гвинтівка (3 кроки)',
+    'ammo-22lr': 'Калібр .22 LR', 'ammo-223': 'Калібр .223', 'ammo-545': 'Калібр 5.45',
+    'ammo-30': 'Калібр .30', 'ammo-338': 'Калібр .338', footer: 'Гвинтівка у футері'
+  };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -26,11 +35,36 @@
     loginView.hidden = view !== 'login';
     dashView.hidden = view !== 'dash';
   }
+  var toastTimer;
+  function toast(msg, ok) {
+    toastEl.textContent = msg;
+    toastEl.className = 'toast ' + (ok ? 'is-ok' : 'is-err');
+    toastEl.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.hidden = true; }, 3200);
+  }
+
+  /* ---------- HTTP ---------- */
+  function getJSON(url) {
+    return fetch(url, { headers: { 'Accept': 'application/json' } }).then(function (r) {
+      if (r.status === 401) { show('login'); throw new Error('unauth'); }
+      return r.json();
+    });
+  }
+  function postJSON(url, body) {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF || '' },
+      body: JSON.stringify(body || {})
+    }).then(function (r) {
+      return r.json().then(function (d) { return { ok: r.ok, status: r.status, d: d }; });
+    });
+  }
 
   /* ---------- Сесія ---------- */
   function checkSession() {
     fetch('/api/admin/session').then(function (r) { return r.json(); }).then(function (d) {
-      if (d.authed) { show('dash'); loadOrders(); }
+      if (d.authed) { CSRF = d.csrf; show('dash'); loadAll(); }
       else { show('login'); setTimeout(function () { document.getElementById('password').focus(); }, 30); }
     }).catch(function () { show('login'); });
   }
@@ -40,20 +74,34 @@
     loginErr.hidden = true;
     var pw = document.getElementById('password').value;
     var btn = loginForm.querySelector('button'); btn.disabled = true;
-    fetch('/api/admin/login', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw })
-    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+    postJSON('/api/admin/login', { password: pw })
       .then(function (res) {
-        if (res.ok && res.d.success) { document.getElementById('password').value = ''; show('dash'); loadOrders(); }
-        else { loginErr.textContent = res.d.error || 'Помилка входу'; loginErr.hidden = false; }
+        if (res.ok && res.d.success) {
+          CSRF = res.d.csrf;
+          document.getElementById('password').value = '';
+          show('dash'); loadAll();
+        } else { loginErr.textContent = res.d.error || 'Помилка входу'; loginErr.hidden = false; }
       }).catch(function () { loginErr.textContent = 'Помилка зʼєднання'; loginErr.hidden = false; })
       .finally(function () { btn.disabled = false; });
   });
 
   document.getElementById('logout').addEventListener('click', function () {
-    fetch('/api/admin/logout', { method: 'POST' }).finally(function () { show('login'); });
+    postJSON('/api/admin/logout', {}).finally(function () { CSRF = null; show('login'); });
   });
   document.getElementById('refresh').addEventListener('click', loadOrders);
+
+  /* ---------- Вкладки ---------- */
+  document.getElementById('tabs').addEventListener('click', function (e) {
+    var btn = e.target.closest('.tab'); if (!btn) return;
+    var name = btn.getAttribute('data-tab');
+    document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('is-active', t === btn); });
+    document.querySelectorAll('.panel').forEach(function (p) {
+      var on = p.getAttribute('data-panel') === name;
+      p.classList.toggle('is-active', on); p.hidden = !on;
+    });
+  });
+
+  function loadAll() { loadOrders(); loadContent(); }
 
   /* ---------- Замовлення ---------- */
   function detailsHtml(o) {
@@ -73,8 +121,7 @@
     return html;
   }
 
-  function render(orders) {
-    // статистика
+  function renderOrders(orders) {
     var total = orders.length;
     var neworders = orders.filter(function (o) { return (o.status || 'Нове') === 'Нове'; }).length;
     statsBox.innerHTML =
@@ -104,26 +151,152 @@
 
     rows.querySelectorAll('select.status').forEach(function (sel) {
       sel.addEventListener('change', function () {
-        var index = sel.getAttribute('data-index');
-        var status = sel.value;
+        var index = +sel.getAttribute('data-index');
         sel.disabled = true;
-        fetch('/api/admin/order-status', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index: +index, status: status })
-        }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        postJSON('/api/admin/order-status', { index: index, status: sel.value })
           .then(function (res) {
-            if (res.ok && res.d.success) { sel.setAttribute('data-s', status); }
-            else if (res.ok === false && res.d && res.d.error === 'Не авторизовано') { show('login'); }
+            if (res.ok && res.d.success) { sel.setAttribute('data-s', sel.value); }
+            else if (res.status === 401) { show('login'); }
+            else { toast(res.d.error || 'Не вдалося зберегти', false); }
           }).finally(function () { sel.disabled = false; });
       });
     });
   }
 
   function loadOrders() {
-    fetch('/api/admin/orders').then(function (r) {
-      if (r.status === 401) { show('login'); return null; }
-      return r.json();
-    }).then(function (d) { if (d && d.orders) render(d.orders); })
-      .catch(function () {});
+    getJSON('/api/admin/orders').then(function (d) { if (d && d.orders) renderOrders(d.orders); }).catch(function () {});
+  }
+
+  /* ---------- Контент ---------- */
+  function loadContent() {
+    getJSON('/api/content').then(function (c) {
+      renderPrices(c.prices || []);
+      renderFaq(c.faq || []);
+      fillTexts(c.texts || {});
+      renderImages(c.images || {});
+    }).catch(function () {});
+  }
+
+  /* --- Ціни --- */
+  function priceRow(p) {
+    p = p || {};
+    var row = document.createElement('div'); row.className = 'erow erow--price';
+    row.innerHTML =
+      '<input class="p-cal" placeholder="Калібр" />' +
+      '<input class="p-std" placeholder="Стандартний" />' +
+      '<input class="p-int" placeholder="Інтегрований" />' +
+      '<button class="btn btn--del" title="Видалити" type="button">✕</button>';
+    row.querySelector('.p-cal').value = p.cal || '';
+    row.querySelector('.p-std').value = p.std || '';
+    row.querySelector('.p-int').value = p.int || '';
+    row.querySelector('.btn--del').addEventListener('click', function () { row.remove(); });
+    return row;
+  }
+  function renderPrices(list) {
+    var box = document.getElementById('price-rows'); box.innerHTML = '';
+    list.forEach(function (p) { box.appendChild(priceRow(p)); });
+  }
+  document.getElementById('price-add').addEventListener('click', function () {
+    document.getElementById('price-rows').appendChild(priceRow({}));
+  });
+  document.getElementById('price-save').addEventListener('click', function () {
+    var list = Array.prototype.map.call(document.querySelectorAll('#price-rows .erow'), function (r) {
+      return { cal: r.querySelector('.p-cal').value, std: r.querySelector('.p-std').value, int: r.querySelector('.p-int').value };
+    });
+    postJSON('/api/admin/content/prices', { prices: list }).then(function (res) {
+      if (res.ok && res.d.success) { renderPrices(res.d.prices); toast('Ціни збережено', true); }
+      else if (res.status === 401) show('login');
+      else toast(res.d.error || 'Помилка', false);
+    });
+  });
+
+  /* --- FAQ --- */
+  function faqRow(f) {
+    f = f || {};
+    var row = document.createElement('div'); row.className = 'erow erow--faq';
+    row.innerHTML =
+      '<div class="erow__grow">' +
+      '<input class="f-q" placeholder="Питання" />' +
+      '<textarea class="f-a" rows="2" placeholder="Відповідь"></textarea>' +
+      '</div>' +
+      '<button class="btn btn--del" title="Видалити" type="button">✕</button>';
+    row.querySelector('.f-q').value = f.q || '';
+    row.querySelector('.f-a').value = f.a || '';
+    row.querySelector('.btn--del').addEventListener('click', function () { row.remove(); });
+    return row;
+  }
+  function renderFaq(list) {
+    var box = document.getElementById('faq-rows'); box.innerHTML = '';
+    list.forEach(function (f) { box.appendChild(faqRow(f)); });
+  }
+  document.getElementById('faq-add').addEventListener('click', function () {
+    document.getElementById('faq-rows').appendChild(faqRow({}));
+  });
+  document.getElementById('faq-save').addEventListener('click', function () {
+    var list = Array.prototype.map.call(document.querySelectorAll('#faq-rows .erow'), function (r) {
+      return { q: r.querySelector('.f-q').value, a: r.querySelector('.f-a').value };
+    });
+    postJSON('/api/admin/content/faq', { faq: list }).then(function (res) {
+      if (res.ok && res.d.success) { renderFaq(res.d.faq); toast('FAQ збережено', true); }
+      else if (res.status === 401) show('login');
+      else toast(res.d.error || 'Помилка', false);
+    });
+  });
+
+  /* --- Тексти --- */
+  function fillTexts(t) {
+    ['hero_subtitle', 'about_text', 'email', 'phone'].forEach(function (k) {
+      var el = document.getElementById('t-' + k);
+      if (el) el.value = t[k] || '';
+    });
+  }
+  document.getElementById('texts-save').addEventListener('click', function () {
+    var texts = {};
+    ['hero_subtitle', 'about_text', 'email', 'phone'].forEach(function (k) {
+      texts[k] = document.getElementById('t-' + k).value;
+    });
+    postJSON('/api/admin/content/texts', { texts: texts }).then(function (res) {
+      if (res.ok && res.d.success) { fillTexts(res.d.texts); toast('Тексти збережено', true); }
+      else if (res.status === 401) show('login');
+      else toast(res.d.error || 'Помилка', false);
+    });
+  });
+
+  /* --- Фото --- */
+  function renderImages(images) {
+    var grid = document.getElementById('imggrid'); grid.innerHTML = '';
+    Object.keys(IMAGE_LABELS).forEach(function (slot) {
+      var card = document.createElement('div'); card.className = 'imgcard';
+      var src = images[slot] ? ('/' + String(images[slot]).replace(/^\/+/, '')) : '';
+      card.innerHTML =
+        '<div class="imgcard__prev"><img alt="" /></div>' +
+        '<div class="imgcard__name"></div>' +
+        '<label class="btn imgcard__pick">Обрати файл<input type="file" accept="image/png,image/jpeg,image/webp" hidden /></label>' +
+        '<span class="imgcard__status"></span>';
+      card.querySelector('.imgcard__name').textContent = IMAGE_LABELS[slot];
+      if (src) card.querySelector('img').src = src + '?t=' + Date.now();
+      var input = card.querySelector('input[type=file]');
+      var status = card.querySelector('.imgcard__status');
+      input.addEventListener('change', function () {
+        var file = input.files && input.files[0]; if (!file) return;
+        if (file.size > 6 * 1024 * 1024) { status.textContent = 'Файл завеликий (макс 6 МБ)'; return; }
+        status.textContent = 'Завантаження…';
+        var reader = new FileReader();
+        reader.onload = function () {
+          postJSON('/api/admin/upload', { slot: slot, dataUrl: reader.result }).then(function (res) {
+            if (res.ok && res.d.success) {
+              card.querySelector('img').src = '/' + res.d.path + '?t=' + Date.now();
+              status.textContent = 'Оновлено ✓';
+              toast('Фото оновлено: ' + IMAGE_LABELS[slot], true);
+            } else if (res.status === 401) { show('login'); }
+            else { status.textContent = res.d.error || 'Помилка'; }
+          }).catch(function () { status.textContent = 'Помилка звʼязку'; });
+        };
+        reader.readAsDataURL(file);
+        input.value = '';
+      });
+      grid.appendChild(card);
+    });
   }
 
   checkSession();

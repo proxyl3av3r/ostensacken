@@ -4,6 +4,8 @@
    Osten-Sacken — backend
    - віддає статику з ./public
    - POST /api/order: валідація → лист продавцю (Resend) → бекап на диск
+   - GET  /api/content: керований контент лендінга (ціни/FAQ/тексти/фото)
+   - /api/admin/*: вхід за паролем + перегляд замовлень + редагування контенту
    nginx проксіює /api/ сюди (127.0.0.1:PORT), статику віддає сам.
    ============================================================ */
 
@@ -14,31 +16,65 @@ const crypto = require('crypto');
 const express = require('express');
 const { Resend } = require('resend');
 const { sellerHtml, sellerText, clientHtml, clientText } = require('./lib/email-template');
+const content = require('./lib/content');
+const { checkPassword, createSessionStore, safeEqualStr } = require('./lib/auth');
 
 const PORT = process.env.PORT || 3000;
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 const TO_EMAIL = process.env.TO_EMAIL || '';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
-const SESSION_SECRET = process.env.SESSION_SECRET || 'change-me-please';
+const ADMIN_PW_HASH = process.env.ADMIN_PASSWORD_HASH || '';
+const ADMIN_PW_PLAIN = process.env.ADMIN_PASSWORD || '';
+const ADMIN_CONFIGURED = !!(ADMIN_PW_HASH || ADMIN_PW_PLAIN);
 
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
+const sessions = createSessionStore();
 
 const app = express();
+app.disable('x-powered-by');
 app.set('trust proxy', 1);                 // за nginx — коректний IP клієнта
-app.use(express.json({ limit: '32kb' }));
 
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const DATA_DIR = path.join(__dirname, 'data');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
+const UPLOADS_DIR = path.join(PUBLIC_DIR, 'images', 'uploads');
 
-/* ---------- Валідація/санітизація (дзеркалить клієнтську) ---------- */
-// прибираємо керуючі/невидимі символи (C0 та C1)
+/* ---------- Security headers (для всіх відповідей) ---------- */
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  res.setHeader('Content-Security-Policy', [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "media-src 'self'",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'"
+  ].join('; '));
+  if (req.headers['x-forwarded-proto'] === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
+
+/* ---------- Парсери тіла: маленький ліміт скрізь, більший — лише на аплоуд ---------- */
+const jsonBig = express.json({ limit: '12mb' });   // base64 6 МБ зображення ≈ 8 МБ + запас
+const jsonSmall = express.json({ limit: '32kb' });
+app.use((req, res, next) => (req.path === '/api/admin/upload' ? jsonBig : jsonSmall)(req, res, next));
+
+/* ---------- Валідація/санітизація замовлення (дзеркалить клієнтську) ---------- */
 function clean(s) {
-  s = String(s == null ? "" : s);
-  var out = "";
-  for (var i = 0; i < s.length; i++) {
-    var c = s.charCodeAt(i);
+  s = String(s == null ? '' : s);
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
     if ((c < 32 && c !== 9 && c !== 10) || (c >= 127 && c <= 159)) continue;  // керуючі, крім tab/переносу
     out += s.charAt(i);
   }
@@ -54,7 +90,6 @@ function validate(body) {
 
   if (!NAME_RE.test(name)) return { error: 'Некоректне імʼя' };
 
-  // Телефон необовʼязковий; якщо вказаний — має бути валідним UA-форматом
   let phone = '';
   if (phoneDigits) {
     const phoneOk =
@@ -63,8 +98,8 @@ function validate(body) {
       (phoneDigits.length === 10 && phoneDigits.startsWith('0'));
     if (!phoneOk) return { error: 'Некоректний номер телефону' };
     let d = phoneDigits;
-    if (d.length === 10) d = '38' + d;       // 0XXXXXXXXX → 380XXXXXXXXX
-    else if (d.length === 11) d = '3' + d;   // 80XXXXXXXXX → 380XXXXXXXXX
+    if (d.length === 10) d = '38' + d;
+    else if (d.length === 11) d = '3' + d;
     phone = '+' + d;
   }
 
@@ -72,7 +107,6 @@ function validate(body) {
 
   const cap = (s, n) => clean(s).slice(0, n);
 
-  // Замовлення (структуровані дані з модалки) чи звернення (форма «питання»)?
   const rawOrder = body && body.order;
   if (rawOrder && typeof rawOrder === 'object') {
     const order = {
@@ -92,25 +126,28 @@ function validate(body) {
 }
 
 /* ---------- Простий rate-limit (in-memory) ---------- */
-const hits = new Map();
-function rateLimited(ip) {
-  const now = Date.now();
-  const windowMs = 10 * 60 * 1000;           // 10 хв
-  const max = 5;                             // до 5 звернень з IP
-  const arr = (hits.get(ip) || []).filter((t) => now - t < windowMs);
-  arr.push(now);
-  hits.set(ip, arr);
-  return arr.length > max;
+function makeLimiter(windowMs, max) {
+  const hits = new Map();
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, arr] of hits) {
+      const keep = arr.filter((t) => now - t < windowMs);
+      if (keep.length) hits.set(ip, keep); else hits.delete(ip);
+    }
+  }, windowMs).unref();
+  return function limited(ip) {
+    const now = Date.now();
+    const arr = (hits.get(ip) || []).filter((t) => now - t < windowMs);
+    arr.push(now);
+    hits.set(ip, arr);
+    return arr.length > max;
+  };
 }
-setInterval(() => {                          // прибирання старих записів
-  const now = Date.now();
-  for (const [ip, arr] of hits) {
-    const keep = arr.filter((t) => now - t < 10 * 60 * 1000);
-    if (keep.length) hits.set(ip, keep); else hits.delete(ip);
-  }
-}, 15 * 60 * 1000).unref();
+const orderLimited = makeLimiter(10 * 60 * 1000, 5);   // 5 звернень / 10 хв
+const loginLimited = makeLimiter(10 * 60 * 1000, 10);  // 10 спроб входу / 10 хв
+const adminWriteLimited = makeLimiter(10 * 60 * 1000, 120); // адмін-мутації
 
-/* ---------- Бекап замовлення на диск (щоб нічого не втратити) ---------- */
+/* ---------- Бекап замовлення на диск ---------- */
 function saveOrder(record) {
   try {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -124,15 +161,24 @@ function saveOrder(record) {
     console.error('[orders] не вдалося зберегти на диск:', e.message);
   }
 }
+function readOrders() {
+  try { if (fs.existsSync(ORDERS_FILE)) return JSON.parse(fs.readFileSync(ORDERS_FILE, 'utf8')) || []; } catch (_) {}
+  return [];
+}
 
 /* ---------- Health ---------- */
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, resend: !!resend, to: !!TO_EMAIL });
+  res.json({ ok: true, resend: !!resend, to: !!TO_EMAIL, admin: ADMIN_CONFIGURED });
+});
+
+/* ---------- Публічний контент лендінга ---------- */
+app.get('/api/content', (req, res) => {
+  res.json(content.getContent());
 });
 
 /* ---------- Прийом замовлення ---------- */
 app.post('/api/order', async (req, res) => {
-  if (rateLimited(req.ip)) {
+  if (orderLimited(req.ip)) {
     return res.status(429).json({ error: 'Забагато звернень. Спробуйте трохи згодом.' });
   }
 
@@ -140,17 +186,15 @@ app.post('/api/order', async (req, res) => {
   if (v.error) return res.status(400).json({ error: v.error });
   const data = v.data;
 
-  // Завжди зберігаємо копію (навіть якщо лист не піде)
   saveOrder({ at: new Date().toISOString(), ip: req.ip, ...data });
 
   if (!resend || !TO_EMAIL) {
-    console.error('[order] Resend не налаштований (RESEND_API_KEY / TO_EMAIL). Замовлення збережено на диск.');
+    console.error('[order] Resend не налаштований. Замовлення збережено на диск.');
     return res.status(503).json({ error: 'Тимчасово не вдалося надіслати. Зателефонуйте нам, будь ласка.' });
   }
 
   const isOrder = data.kind === 'order';
   try {
-    // 1) лист продавцю (головний — від нього залежить success)
     const seller = await resend.emails.send({
       from: FROM_EMAIL,
       to: TO_EMAIL,
@@ -161,7 +205,6 @@ app.post('/api/order', async (req, res) => {
     });
     if (seller.error) throw new Error(seller.error.message || 'Resend error');
 
-    // 2) лист-підтвердження клієнту (best-effort — не валимо запит, якщо не піде)
     try {
       await resend.emails.send({
         from: FROM_EMAIL,
@@ -183,11 +226,8 @@ app.post('/api/order', async (req, res) => {
 });
 
 /* =====================================================================
-   АДМІН-ПАНЕЛЬ (/admin) — вхід за паролем + перегляд замовлень
+   АДМІН-ПАНЕЛЬ (/api/admin)
    ===================================================================== */
-function adminToken() {
-  return crypto.createHmac('sha256', SESSION_SECRET).update('admin:' + ADMIN_PASSWORD).digest('hex');
-}
 function parseCookies(req) {
   const out = {};
   (req.headers.cookie || '').split(';').forEach((p) => {
@@ -196,53 +236,67 @@ function parseCookies(req) {
   });
   return out;
 }
-function safeEqual(a, b) {
-  const ba = Buffer.from(String(a)), bb = Buffer.from(String(b));
-  return ba.length === bb.length && crypto.timingSafeEqual(ba, bb);
-}
-function isAdmin(req) {
-  if (!ADMIN_PASSWORD) return false;
+function currentSession(req) {
   const c = parseCookies(req);
-  return !!c.os_admin && safeEqual(c.os_admin, adminToken());
+  return sessions.get(c.os_admin);
 }
 function requireAdmin(req, res, next) {
-  if (!isAdmin(req)) return res.status(401).json({ error: 'Не авторизовано' });
+  const s = currentSession(req);
+  if (!s) return res.status(401).json({ error: 'Не авторизовано' });
+  req.session = s;
   next();
 }
-function readOrders() {
-  try { if (fs.existsSync(ORDERS_FILE)) return JSON.parse(fs.readFileSync(ORDERS_FILE, 'utf8')) || []; } catch (_) {}
-  return [];
+// CSRF (double-submit): заголовок має збігатися з токеном сесії
+function requireCsrf(req, res, next) {
+  if (adminWriteLimited(req.ip)) return res.status(429).json({ error: 'Забагато запитів.' });
+  const hdr = req.headers['x-csrf-token'];
+  if (!hdr || !req.session || !safeEqualStr(hdr, req.session.csrf)) {
+    return res.status(403).json({ error: 'CSRF-перевірка не пройдена' });
+  }
+  next();
 }
-
-// окремий, м'якший ліміт на спроби входу (10 / 10 хв на IP)
-const loginHits = new Map();
-function loginLimited(ip) {
-  const now = Date.now(), win = 10 * 60 * 1000;
-  const arr = (loginHits.get(ip) || []).filter((t) => now - t < win);
-  arr.push(now); loginHits.set(ip, arr);
-  return arr.length > 10;
+function setSessionCookies(req, res, sid, csrf) {
+  const secure = (req.headers['x-forwarded-proto'] === 'https') ? '; Secure' : '';
+  const maxAge = Math.floor(sessions.ttlMs / 1000);
+  res.setHeader('Set-Cookie', [
+    'os_admin=' + sid + '; HttpOnly; Path=/; SameSite=Lax; Max-Age=' + maxAge + secure,
+    'os_csrf=' + csrf + '; Path=/; SameSite=Lax; Max-Age=' + maxAge + secure
+  ]);
 }
 
 app.post('/api/admin/login', (req, res) => {
-  if (!ADMIN_PASSWORD) return res.status(503).json({ error: 'Адмінку не налаштовано (ADMIN_PASSWORD у .env)' });
+  if (!ADMIN_CONFIGURED) return res.status(503).json({ error: 'Адмінку не налаштовано (ADMIN_PASSWORD_HASH у .env)' });
   if (loginLimited(req.ip)) return res.status(429).json({ error: 'Забагато спроб. Спробуйте пізніше.' });
   const pw = String((req.body && req.body.password) || '');
-  if (!safeEqual(pw, ADMIN_PASSWORD)) return res.status(401).json({ error: 'Невірний пароль' });
-  const secure = (req.headers['x-forwarded-proto'] === 'https') ? '; Secure' : '';
-  res.setHeader('Set-Cookie', 'os_admin=' + adminToken() + '; HttpOnly; Path=/; SameSite=Lax; Max-Age=' + (60 * 60 * 24 * 7) + secure);
-  res.json({ success: true });
+  if (!checkPassword(pw, { hash: ADMIN_PW_HASH, plain: ADMIN_PW_PLAIN })) {
+    return res.status(401).json({ error: 'Невірний пароль' });
+  }
+  const { sid, csrf } = sessions.create();
+  setSessionCookies(req, res, sid, csrf);
+  res.json({ success: true, csrf });
 });
-app.post('/api/admin/logout', (req, res) => {
-  res.setHeader('Set-Cookie', 'os_admin=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0');
-  res.json({ success: true });
-});
-app.get('/api/admin/session', (req, res) => res.json({ authed: isAdmin(req) }));
 
+app.post('/api/admin/logout', (req, res) => {
+  const c = parseCookies(req);
+  sessions.destroy(c.os_admin);
+  res.setHeader('Set-Cookie', [
+    'os_admin=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0',
+    'os_csrf=; Path=/; SameSite=Lax; Max-Age=0'
+  ]);
+  res.json({ success: true });
+});
+
+app.get('/api/admin/session', (req, res) => {
+  const s = currentSession(req);
+  res.json({ authed: !!s, csrf: s ? s.csrf : null });
+});
+
+/* --- Замовлення --- */
 app.get('/api/admin/orders', requireAdmin, (req, res) => {
   const list = readOrders().map((o, i) => Object.assign({ index: i, status: o.status || 'Нове' }, o));
-  res.json({ orders: list.reverse() }); // новіші зверху
+  res.json({ orders: list.reverse() });
 });
-app.post('/api/admin/order-status', requireAdmin, (req, res) => {
+app.post('/api/admin/order-status', requireAdmin, requireCsrf, (req, res) => {
   const idx = parseInt(req.body && req.body.index, 10);
   const allowed = ['Нове', 'В роботі', 'Виконано', 'Скасовано'];
   const status = String((req.body && req.body.status) || '');
@@ -255,11 +309,69 @@ app.post('/api/admin/order-status', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+/* --- Контент: тексти / ціни / FAQ --- */
+app.post('/api/admin/content/texts', requireAdmin, requireCsrf, (req, res) => {
+  try { res.json({ success: true, texts: content.saveTexts(req.body && req.body.texts) }); }
+  catch (e) { res.status(400).json({ error: e.message || 'Помилка збереження' }); }
+});
+app.post('/api/admin/content/prices', requireAdmin, requireCsrf, (req, res) => {
+  try { res.json({ success: true, prices: content.savePrices(req.body && req.body.prices) }); }
+  catch (e) { res.status(400).json({ error: e.message || 'Помилка збереження' }); }
+});
+app.post('/api/admin/content/faq', requireAdmin, requireCsrf, (req, res) => {
+  try { res.json({ success: true, faq: content.saveFaq(req.body && req.body.faq) }); }
+  catch (e) { res.status(400).json({ error: e.message || 'Помилка збереження' }); }
+});
+
+/* --- Завантаження зображення (base64, без сторонніх залежностей) --- */
+const IMG_TYPES = {
+  'image/png': { ext: 'png', magic: (b) => b.length > 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 },
+  'image/jpeg': { ext: 'jpg', magic: (b) => b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  'image/webp': { ext: 'webp', magic: (b) => b.length > 12 && b.slice(0, 4).toString('ascii') === 'RIFF' && b.slice(8, 12).toString('ascii') === 'WEBP' }
+};
+const MAX_IMG_BYTES = 6 * 1024 * 1024;
+
+app.post('/api/admin/upload', requireAdmin, requireCsrf, (req, res) => {
+  const slot = String((req.body && req.body.slot) || '');
+  const dataUrl = String((req.body && req.body.dataUrl) || '');
+  if (content.IMAGE_SLOTS.indexOf(slot) < 0) return res.status(400).json({ error: 'Невідомий слот' });
+
+  const m = /^data:([^;,]+);base64,(.+)$/s.exec(dataUrl);
+  if (!m) return res.status(400).json({ error: 'Некоректні дані зображення' });
+  const mime = m[1];
+  const spec = IMG_TYPES[mime];
+  if (!spec) return res.status(400).json({ error: 'Дозволені лише PNG, JPG або WEBP' });
+
+  let buf;
+  try { buf = Buffer.from(m[2], 'base64'); } catch (_) { return res.status(400).json({ error: 'Некоректний base64' }); }
+  if (!buf.length || buf.length > MAX_IMG_BYTES) return res.status(400).json({ error: 'Файл завеликий (максимум 6 МБ)' });
+  if (!spec.magic(buf)) return res.status(400).json({ error: 'Вміст файлу не відповідає типу зображення' });
+
+  try {
+    if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    const fname = slot + '-' + crypto.randomBytes(6).toString('hex') + '.' + spec.ext;
+    fs.writeFileSync(path.join(UPLOADS_DIR, fname), buf);
+
+    // прибрати попередній аплоуд цього слота (щоб не накопичувати сміття)
+    const prev = content.getContent().images[slot];
+    const rel = 'images/uploads/' + fname;
+    content.setImage(slot, rel);
+    if (prev && prev.indexOf('images/uploads/') === 0 && prev !== rel) {
+      const prevPath = path.join(PUBLIC_DIR, prev);
+      fs.unlink(prevPath, () => {});
+    }
+    res.json({ success: true, slot, path: rel });
+  } catch (e) {
+    console.error('[upload] помилка:', e.message);
+    res.status(500).json({ error: 'Не вдалося зберегти файл' });
+  }
+});
+
 /* ---------- Статика (fallback; на проді її віддає nginx) ---------- */
 app.use(express.static(PUBLIC_DIR, { extensions: ['html'] }));
 app.get('/', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 
 app.listen(PORT, () => {
   console.log('Osten-Sacken server on http://127.0.0.1:' + PORT +
-    '  (resend: ' + (!!resend) + ', to: ' + (TO_EMAIL || '—') + ')');
+    '  (resend: ' + (!!resend) + ', to: ' + (TO_EMAIL || '—') + ', admin: ' + ADMIN_CONFIGURED + ')');
 });

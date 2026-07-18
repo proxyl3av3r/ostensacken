@@ -7,6 +7,77 @@
   var yearEl = document.getElementById('year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 
+  /* ---- Гідратація керованим контентом (ціни/FAQ/тексти/фото з адмінки) ----
+     Значення виводяться лише через textContent / src — жодного innerHTML,
+     тож XSS з боку збережених даних неможливий. Якщо запит впав — лишається
+     статична розмітка (дефолти), сайт не ламається. */
+  (function hydrate() {
+    fetch('/api/content', { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (c) { if (c) applyContent(c); })
+      .catch(function () {});
+
+    function applyContent(c) {
+      // Тексти
+      if (c.texts) {
+        document.querySelectorAll('[data-text]').forEach(function (el) {
+          var v = c.texts[el.getAttribute('data-text')];
+          if (typeof v === 'string' && v) el.textContent = v;
+        });
+        // Контакти (href + видимий текст)
+        var email = c.texts.email, phone = c.texts.phone;
+        if (email) document.querySelectorAll('[data-contact="email"]').forEach(function (a) {
+          a.setAttribute('href', 'mailto:' + email);
+          var t = a.querySelector('[data-contact-text]'); if (t) t.textContent = email;
+        });
+        if (phone) document.querySelectorAll('[data-contact="phone"]').forEach(function (a) {
+          a.setAttribute('href', 'tel:+' + String(phone).replace(/\D/g, ''));
+          var t = a.querySelector('[data-contact-text]'); if (t) t.textContent = phone;
+        });
+      }
+      // Фото
+      if (c.images) {
+        document.querySelectorAll('[data-img]').forEach(function (img) {
+          var p = c.images[img.getAttribute('data-img')];
+          if (typeof p === 'string' && p) img.setAttribute('src', '/' + p.replace(/^\/+/, ''));
+        });
+      }
+      // Ціни
+      if (Array.isArray(c.prices)) {
+        var table = document.querySelector('[data-prices]');
+        if (table) {
+          table.querySelectorAll('.prow:not(.prow--head)').forEach(function (r) { r.remove(); });
+          c.prices.forEach(function (p) {
+            var row = document.createElement('div'); row.className = 'prow';
+            row.appendChild(pcell('pcell pcell--cal', 'Калібр', p.cal));
+            row.appendChild(pcell('pcell', 'Стандартний', p.std));
+            row.appendChild(pcell('pcell', 'Інтегрований', p.int));
+            table.appendChild(row);
+          });
+        }
+      }
+      // FAQ
+      if (Array.isArray(c.faq)) {
+        var list = document.querySelector('[data-faq]');
+        if (list) {
+          list.innerHTML = '';
+          c.faq.forEach(function (f) {
+            var d = document.createElement('details'); d.className = 'faq__item';
+            var s = document.createElement('summary'); s.className = 'faq__q'; s.textContent = f.q;
+            var a = document.createElement('div'); a.className = 'faq__a'; a.textContent = f.a;
+            d.appendChild(s); d.appendChild(a); list.appendChild(d);
+          });
+        }
+      }
+    }
+    function pcell(cls, label, text) {
+      var el = document.createElement('div');
+      el.className = cls; el.setAttribute('data-label', label);
+      el.textContent = text == null ? '' : text;
+      return el;
+    }
+  })();
+
   /* ---- Header shadow ---- */
   var header = document.getElementById('header');
   function onScroll() { header.classList.toggle('is-scrolled', window.scrollY > 8); }

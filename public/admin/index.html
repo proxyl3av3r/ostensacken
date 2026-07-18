@@ -25,27 +25,78 @@
   <!-- Дашборд -->
   <div class="dash" id="dash" hidden>
     <div class="dash__top">
-      <div class="dash__brand">OSTEN — SACKEN · Замовлення</div>
+      <div class="dash__brand">OSTEN — SACKEN</div>
       <div class="dash__actions">
-        <button class="btn" id="refresh">Оновити</button>
+        <a class="btn" href="/" target="_blank" rel="noopener">Відкрити сайт</a>
         <button class="btn" id="logout">Вийти</button>
       </div>
     </div>
 
-    <div class="stats" id="stats"></div>
+    <nav class="tabs" id="tabs">
+      <button class="tab is-active" data-tab="orders">Замовлення</button>
+      <button class="tab" data-tab="prices">Ціни</button>
+      <button class="tab" data-tab="faq">FAQ</button>
+      <button class="tab" data-tab="texts">Тексти</button>
+      <button class="tab" data-tab="images">Фото</button>
+    </nav>
 
-    <div class="tablewrap" id="tablewrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Дата</th><th>Тип</th><th>Клієнт</th><th>Контакти</th><th>Деталі</th><th>Статус</th>
-          </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </div>
-    <div class="empty" id="empty" hidden>Замовлень поки немає</div>
+    <!-- Замовлення -->
+    <section class="panel is-active" data-panel="orders">
+      <div class="panel__head">
+        <div class="stats" id="stats"></div>
+        <button class="btn" id="refresh">Оновити</button>
+      </div>
+      <div class="tablewrap" id="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Дата</th><th>Тип</th><th>Клієнт</th><th>Контакти</th><th>Деталі</th><th>Статус</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="empty" hidden>Замовлень поки немає</div>
+    </section>
+
+    <!-- Ціни -->
+    <section class="panel" data-panel="prices" hidden>
+      <p class="panel__hint">Таблиця цін на сайті. Порожній калібр — рядок видаляється.</p>
+      <div class="editrows" id="price-rows"></div>
+      <div class="panel__foot">
+        <button class="btn" id="price-add">+ Додати рядок</button>
+        <button class="btn btn--accent" id="price-save">Зберегти ціни</button>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="panel" data-panel="faq" hidden>
+      <p class="panel__hint">Питання та відповіді (акордеон на сайті).</p>
+      <div class="editrows" id="faq-rows"></div>
+      <div class="panel__foot">
+        <button class="btn" id="faq-add">+ Додати питання</button>
+        <button class="btn btn--accent" id="faq-save">Зберегти FAQ</button>
+      </div>
+    </section>
+
+    <!-- Тексти -->
+    <section class="panel" data-panel="texts" hidden>
+      <p class="panel__hint">Ключові тексти й контакти.</p>
+      <div class="field2"><label>Підзаголовок Hero</label><textarea id="t-hero_subtitle" rows="3"></textarea></div>
+      <div class="field2"><label>Текст «Про нас»</label><textarea id="t-about_text" rows="4"></textarea></div>
+      <div class="field2"><label>Email</label><input type="text" id="t-email" /></div>
+      <div class="field2"><label>Телефон</label><input type="text" id="t-phone" /></div>
+      <div class="panel__foot">
+        <button class="btn btn--accent" id="texts-save">Зберегти тексти</button>
+      </div>
+    </section>
+
+    <!-- Фото -->
+    <section class="panel" data-panel="images" hidden>
+      <p class="panel__hint">Заміна зображень на сайті. PNG / JPG / WEBP, до 6 МБ.</p>
+      <div class="imggrid" id="imggrid"></div>
+    </section>
   </div>
+
+  <div class="toast" id="toast" hidden></div>
 
   <script src="./admin.js"></script>
 </body>
