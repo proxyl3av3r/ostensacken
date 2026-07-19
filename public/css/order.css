@@ -212,6 +212,9 @@ body.omodal-open { overflow:hidden; }
   .op-gallery { position:static; width:100%; max-width:420px; margin-inline:auto; }
   .op-panel { width:100%; gap:32px; }
   .op-title { font-size:26px; }
+  /* На планшеті/мобільному фото показуємо повністю (не обрізаємо знизу) */
+  .op-figure__slide { padding:14px; }
+  .op-figure__slide img { object-fit:contain; }
 }
 @media (max-width:520px){
   .op-figure { aspect-ratio:1/1; }

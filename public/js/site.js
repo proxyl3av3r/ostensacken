@@ -202,7 +202,7 @@
     var row = document.getElementById('ammo-row');
     if (!row) return;
     var cards = Array.prototype.slice.call(row.querySelectorAll('.ammo'));
-    var mq = window.matchMedia('(max-width:760px)');
+    var mq = window.matchMedia('(max-width:980px)');
     var ticking = false;
     function apply() {
       ticking = false;
