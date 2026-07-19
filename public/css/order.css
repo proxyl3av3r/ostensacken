@@ -184,9 +184,10 @@ body.omodal-open { overflow:hidden; }
 /* ---------- Характеристики ---------- */
 .op-features { display:flex; flex-direction:column; gap:20px; max-width:714px; }
 .op-features__title { font-family:var(--font-body); font-weight:600; font-size:24px; color:var(--ink); margin:0; }
-.op-spectable { border:0; }
+.op-spectable { background:var(--white); border:1px solid var(--line-strong); overflow:hidden; }
 .op-specrow { display:grid; grid-template-columns:1fr 1fr; }
-.op-specrow > div { padding:20px 18px; border-bottom:1px solid var(--line-strong); display:flex; align-items:center; }
+.op-specrow > div { padding:20px 18px; border-bottom:1px solid var(--line); display:flex; align-items:center; background:var(--white); }
+.op-specrow > div + div { border-left:1px solid var(--line); }
 .op-specrow:last-child > div { border-bottom:0; }
 .op-specrow--head > div { background:var(--panel); }
 .op-spec__k { font-family:var(--font-body); font-weight:400; font-size:18px; color:var(--muted); }

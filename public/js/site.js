@@ -35,13 +35,20 @@
           var t = a.querySelector('[data-contact-text]'); if (t) t.textContent = phone;
         });
       }
-      // Фото
+      // Фото (одиночні слоти)
       if (c.images) {
         document.querySelectorAll('[data-img]').forEach(function (img) {
           var p = c.images[img.getAttribute('data-img')];
           if (typeof p === 'string' && p) img.setAttribute('src', '/' + p.replace(/^\/+/, ''));
         });
       }
+      // Галереї карток товару (перебудова слайдів + дотів + ре-ініт каруселі)
+      if (c.galleries) {
+        applyGallery('standard', c.galleries.standard);
+        applyGallery('integrated', c.galleries.integrated);
+      }
+      // Наявність (плашки на картках товару та калібрах)
+      if (c.availability) applyAvailability(c.availability);
       // Ціни
       if (Array.isArray(c.prices)) {
         var table = document.querySelector('[data-prices]');
@@ -75,6 +82,60 @@
       el.className = cls; el.setAttribute('data-label', label);
       el.textContent = text == null ? '' : text;
       return el;
+    }
+    function applyGallery(type, photos) {
+      if (!Array.isArray(photos) || !photos.length) return;
+      var prod = document.querySelector('.prod[data-product="' + type + '"]');
+      if (!prod) return;
+      var car = prod.querySelector('[data-carousel]');
+      var track = car && car.querySelector('.prod__track');
+      if (!track) return;
+      var altBase = prod.getAttribute('data-type') || '';
+      track.innerHTML = '';
+      photos.forEach(function (p) {
+        var slide = document.createElement('div'); slide.className = 'prod__slide';
+        var img = document.createElement('img');
+        img.src = '/' + String(p).replace(/^\/+/, '');
+        img.alt = (altBase + ' титановий глушник').trim();
+        img.loading = 'lazy'; img.decoding = 'async';
+        slide.appendChild(img); track.appendChild(slide);
+      });
+      var dotsWrap = car.querySelector('[data-carousel-dots]');
+      if (dotsWrap) {
+        dotsWrap.innerHTML = '';
+        photos.forEach(function (_, idx) {
+          var s = document.createElement('span'); if (idx === 0) s.className = 'is-active';
+          dotsWrap.appendChild(s);
+        });
+      }
+      if (typeof window.__mountCarousel === 'function') window.__mountCarousel(car);
+    }
+    function setBadge(container, inStock, variant) {
+      if (!container) return;
+      var badge = container.querySelector(':scope > .avail');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'avail';
+        if (variant === 'ammo') container.insertBefore(badge, container.firstChild);
+        else container.insertBefore(badge, container.firstChild);
+      }
+      badge.className = 'avail avail--' + (inStock ? 'in' : 'out') + (variant === 'ammo' ? ' avail--ammo' : '');
+      badge.innerHTML = '<span class="avail__dot"></span>' + (inStock ? 'В наявності' : 'Немає в наявності');
+    }
+    function applyAvailability(av) {
+      if (av.products) {
+        Object.keys(av.products).forEach(function (type) {
+          var prod = document.querySelector('.prod[data-product="' + type + '"]');
+          if (prod) setBadge(prod.querySelector('.prod__body'), av.products[type], 'prod');
+        });
+      }
+      if (av.calibers) {
+        document.querySelectorAll('.ammo').forEach(function (fig) {
+          var img = fig.querySelector('img[data-img]'); if (!img) return;
+          var key = img.getAttribute('data-img');
+          if (Object.prototype.hasOwnProperty.call(av.calibers, key)) setBadge(fig, av.calibers[key], 'ammo');
+        });
+      }
     }
   })();
 
@@ -140,12 +201,14 @@
     });
   });
 
-  /* ---- Product carousel (стрілки вперед/назад, без «перескоку» через край) ---- */
-  document.querySelectorAll('[data-carousel]').forEach(function (car) {
+  /* ---- Product carousel (стрілки вперед/назад, без «перескоку» через край).
+         mountCarousel — ідемпотентна (onclick перезаписується), тож її можна
+         викликати повторно після перебудови слайдів галереї. ---- */
+  function mountCarousel(car) {
     var track = car.querySelector('.prod__track');
     var next = car.querySelector('[data-carousel-next]');
     var prev = car.querySelector('[data-carousel-prev]');
-    var dots = car.querySelectorAll('[data-carousel-dots] span');
+    var dots = Array.prototype.slice.call(car.querySelectorAll('[data-carousel-dots] span'));
     var count = track ? track.children.length : 0;
     var i = 0;
     function go(n) {
@@ -153,14 +216,14 @@
       track.style.transform = 'translateX(' + (-100 * i) + '%)';
       dots.forEach(function (d, idx) { d.classList.toggle('is-active', idx === i); });
       if (prev) prev.hidden = (i === 0);
-      if (next) next.hidden = (i === count - 1);
+      if (next) next.hidden = (count <= 1 || i === count - 1);
     }
-    if (count > 1) {
-      if (next) next.addEventListener('click', function () { go(i + 1); });
-      if (prev) prev.addEventListener('click', function () { go(i - 1); });
-      go(0);
-    }
-  });
+    if (next) next.onclick = function () { go(i + 1); };
+    if (prev) prev.onclick = function () { go(i - 1); };
+    go(0);
+  }
+  window.__mountCarousel = mountCarousel;
+  document.querySelectorAll('[data-carousel]').forEach(mountCarousel);
 
   /* ---- Calibers: mobile "drum" — картка, найближча до центру екрана, стає чіткою.
          Рахуємо від центру ВІКНА при звичайному скролі сторінки (без вкладеного скролу). ---- */

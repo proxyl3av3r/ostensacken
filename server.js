@@ -331,39 +331,89 @@ const IMG_TYPES = {
 };
 const MAX_IMG_BYTES = 6 * 1024 * 1024;
 
+// Декодує data-URL, валідує тип/розмір/сигнатуру. Повертає {buf,ext} або {error}.
+function decodeImage(dataUrl) {
+  const m = /^data:([^;,]+);base64,(.+)$/s.exec(String(dataUrl || ''));
+  if (!m) return { error: 'Некоректні дані зображення' };
+  const spec = IMG_TYPES[m[1]];
+  if (!spec) return { error: 'Дозволені лише PNG, JPG або WEBP' };
+  let buf;
+  try { buf = Buffer.from(m[2], 'base64'); } catch (_) { return { error: 'Некоректний base64' }; }
+  if (!buf.length || buf.length > MAX_IMG_BYTES) return { error: 'Файл завеликий (максимум 6 МБ)' };
+  if (!spec.magic(buf)) return { error: 'Вміст файлу не відповідає типу зображення' };
+  return { buf: buf, ext: spec.ext };
+}
+// Зберігає файл у uploads, повертає відносний шлях (images/uploads/...).
+function saveImageFile(buf, ext, prefix) {
+  if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  const safePrefix = String(prefix).replace(/[^a-z0-9\-]/gi, '') || 'img';
+  const fname = safePrefix + '-' + crypto.randomBytes(6).toString('hex') + '.' + ext;
+  fs.writeFileSync(path.join(UPLOADS_DIR, fname), buf);
+  return 'images/uploads/' + fname;
+}
+// Видаляє файл, лише якщо він у uploads (не чіпаємо базові ассети репозиторію).
+function removeUploadedFile(rel) {
+  if (rel && String(rel).indexOf('images/uploads/') === 0) {
+    fs.unlink(path.join(PUBLIC_DIR, rel), () => {});
+  }
+}
+
+// Заміна одиночного зображення (hero/about/калібри тощо)
 app.post('/api/admin/upload', requireAdmin, requireCsrf, (req, res) => {
   const slot = String((req.body && req.body.slot) || '');
-  const dataUrl = String((req.body && req.body.dataUrl) || '');
   if (content.IMAGE_SLOTS.indexOf(slot) < 0) return res.status(400).json({ error: 'Невідомий слот' });
-
-  const m = /^data:([^;,]+);base64,(.+)$/s.exec(dataUrl);
-  if (!m) return res.status(400).json({ error: 'Некоректні дані зображення' });
-  const mime = m[1];
-  const spec = IMG_TYPES[mime];
-  if (!spec) return res.status(400).json({ error: 'Дозволені лише PNG, JPG або WEBP' });
-
-  let buf;
-  try { buf = Buffer.from(m[2], 'base64'); } catch (_) { return res.status(400).json({ error: 'Некоректний base64' }); }
-  if (!buf.length || buf.length > MAX_IMG_BYTES) return res.status(400).json({ error: 'Файл завеликий (максимум 6 МБ)' });
-  if (!spec.magic(buf)) return res.status(400).json({ error: 'Вміст файлу не відповідає типу зображення' });
-
+  const dec = decodeImage(req.body && req.body.dataUrl);
+  if (dec.error) return res.status(400).json({ error: dec.error });
   try {
-    if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-    const fname = slot + '-' + crypto.randomBytes(6).toString('hex') + '.' + spec.ext;
-    fs.writeFileSync(path.join(UPLOADS_DIR, fname), buf);
-
-    // прибрати попередній аплоуд цього слота (щоб не накопичувати сміття)
     const prev = content.getContent().images[slot];
-    const rel = 'images/uploads/' + fname;
+    const rel = saveImageFile(dec.buf, dec.ext, slot);
     content.setImage(slot, rel);
-    if (prev && prev.indexOf('images/uploads/') === 0 && prev !== rel) {
-      const prevPath = path.join(PUBLIC_DIR, prev);
-      fs.unlink(prevPath, () => {});
-    }
+    if (prev !== rel) removeUploadedFile(prev);
     res.json({ success: true, slot, path: rel });
   } catch (e) {
     console.error('[upload] помилка:', e.message);
     res.status(500).json({ error: 'Не вдалося зберегти файл' });
+  }
+});
+
+// Галерея карток товару: ДОДАТИ фото
+app.post('/api/admin/gallery/add', requireAdmin, requireCsrf, (req, res) => {
+  const product = String((req.body && req.body.product) || '');
+  if (content.PRODUCTS.indexOf(product) < 0) return res.status(400).json({ error: 'Невідома картка' });
+  const dec = decodeImage(req.body && req.body.dataUrl);
+  if (dec.error) return res.status(400).json({ error: dec.error });
+  try {
+    const rel = saveImageFile(dec.buf, dec.ext, 'prod-' + product);
+    const gallery = content.addGalleryPhoto(product, rel);
+    res.json({ success: true, product: product, gallery: gallery });
+  } catch (e) {
+    res.status(400).json({ error: e.message || 'Не вдалося додати' });
+  }
+});
+
+// Галерея карток товару: ВИДАЛИТИ фото за індексом
+app.post('/api/admin/gallery/remove', requireAdmin, requireCsrf, (req, res) => {
+  const product = String((req.body && req.body.product) || '');
+  if (content.PRODUCTS.indexOf(product) < 0) return res.status(400).json({ error: 'Невідома картка' });
+  try {
+    const out = content.removeGalleryPhoto(product, req.body && req.body.index);
+    removeUploadedFile(out.removed);
+    res.json({ success: true, product: product, gallery: out.gallery });
+  } catch (e) {
+    res.status(400).json({ error: e.message || 'Не вдалося видалити' });
+  }
+});
+
+// Наявність: перемкнути стан категорії/підкатегорії
+app.post('/api/admin/availability', requireAdmin, requireCsrf, (req, res) => {
+  const kind = String((req.body && req.body.kind) || '');
+  const key = String((req.body && req.body.key) || '');
+  const value = !!(req.body && req.body.value);
+  try {
+    const availability = content.setAvailability(kind, key, value);
+    res.json({ success: true, availability: availability });
+  } catch (e) {
+    res.status(400).json({ error: e.message || 'Не вдалося зберегти' });
   }
 });
 

@@ -15,6 +15,8 @@
   var toastEl = document.getElementById('toast');
 
   var STATUSES = ['Нове', 'В роботі', 'Виконано', 'Скасовано'];
+  var PRODUCT_LABELS = { standard: 'Стандартний', integrated: 'Інтегрований' };
+  var CALIBER_LABELS = { 'ammo-22lr': '.22 LR', 'ammo-223': '.223', 'ammo-545': '5.45', 'ammo-30': '.30', 'ammo-338': '.338 LM/WM' };
   var IMAGE_LABELS = {
     hero: 'Hero — головне фото', 'supp-standard': 'Стандартний глушник (карусель)',
     about: 'Фото «Про нас»', steps: 'Гвинтівка (3 кроки)',
@@ -173,8 +175,45 @@
       renderPrices(c.prices || []);
       renderFaq(c.faq || []);
       fillTexts(c.texts || {});
+      renderGalleries(c.galleries || {});
       renderImages(c.images || {});
+      renderAvailability(c.availability || {});
     }).catch(function () {});
+  }
+
+  /* --- Наявність --- */
+  function stockRow(kind, key, label, inStock) {
+    var row = document.createElement('div'); row.className = 'stockrow';
+    var name = document.createElement('span'); name.className = 'stockrow__name'; name.textContent = label;
+    var btn = document.createElement('button'); btn.type = 'button';
+    function paint(on) {
+      btn.className = 'stockbtn ' + (on ? 'is-in' : 'is-out');
+      btn.innerHTML = '<span class="stockbtn__dot"></span>' + (on ? 'В наявності' : 'Немає');
+    }
+    paint(inStock);
+    btn.addEventListener('click', function () {
+      var next = !(btn.className.indexOf('is-in') >= 0);
+      btn.disabled = true;
+      postJSON('/api/admin/availability', { kind: kind, key: key, value: next }).then(function (res) {
+        if (res.ok && res.d.success) { paint(next); toast('Збережено: ' + label, true); }
+        else if (res.status === 401) show('login');
+        else toast(res.d.error || 'Помилка', false);
+      }).catch(function () { toast('Помилка звʼязку', false); })
+        .finally(function () { btn.disabled = false; });
+    });
+    row.appendChild(name); row.appendChild(btn);
+    return row;
+  }
+  function renderAvailability(av) {
+    var prod = av.products || {}, cal = av.calibers || {};
+    var pbox = document.getElementById('stock-products'); pbox.innerHTML = '';
+    Object.keys(PRODUCT_LABELS).forEach(function (k) {
+      pbox.appendChild(stockRow('products', k, PRODUCT_LABELS[k], prod[k] !== false));
+    });
+    var cbox = document.getElementById('stock-calibers'); cbox.innerHTML = '';
+    Object.keys(CALIBER_LABELS).forEach(function (k) {
+      cbox.appendChild(stockRow('calibers', k, CALIBER_LABELS[k], cal[k] !== false));
+    });
   }
 
   /* --- Ціни --- */
@@ -262,7 +301,66 @@
     });
   });
 
-  /* --- Фото --- */
+  /* --- Галерея карток товару (додати/видалити фото) --- */
+  function readFileAsDataUrl(file, cb) {
+    var reader = new FileReader();
+    reader.onload = function () { cb(reader.result); };
+    reader.readAsDataURL(file);
+  }
+  function renderGalleries(galleries) {
+    var wrap = document.getElementById('galleries'); wrap.innerHTML = '';
+    Object.keys(PRODUCT_LABELS).forEach(function (product) {
+      var photos = Array.isArray(galleries[product]) ? galleries[product] : [];
+      var block = document.createElement('div'); block.className = 'gblock';
+      var head = document.createElement('div'); head.className = 'gblock__head';
+      head.textContent = PRODUCT_LABELS[product] + ' — ' + photos.length + ' фото';
+      var strip = document.createElement('div'); strip.className = 'gstrip';
+
+      photos.forEach(function (p, idx) {
+        var cell = document.createElement('div'); cell.className = 'gphoto';
+        var img = document.createElement('img'); img.src = '/' + String(p).replace(/^\/+/, '') + '?t=' + Date.now();
+        var del = document.createElement('button'); del.className = 'gphoto__del'; del.type = 'button';
+        del.title = 'Видалити'; del.textContent = '✕';
+        del.addEventListener('click', function () {
+          if (!confirm('Видалити це фото?')) return;
+          del.disabled = true;
+          postJSON('/api/admin/gallery/remove', { product: product, index: idx }).then(function (res) {
+            if (res.ok && res.d.success) { renderGalleries(setGallery(galleries, product, res.d.gallery)); toast('Фото видалено', true); }
+            else if (res.status === 401) show('login');
+            else { toast(res.d.error || 'Помилка', false); del.disabled = false; }
+          }).catch(function () { del.disabled = false; });
+        });
+        cell.appendChild(img); cell.appendChild(del); strip.appendChild(cell);
+      });
+
+      var add = document.createElement('label'); add.className = 'gadd';
+      add.innerHTML = '<span>+ Додати</span><input type="file" accept="image/png,image/jpeg,image/webp" hidden />';
+      var input = add.querySelector('input');
+      input.addEventListener('change', function () {
+        var file = input.files && input.files[0]; if (!file) return;
+        if (file.size > 6 * 1024 * 1024) { toast('Файл завеликий (макс 6 МБ)', false); input.value = ''; return; }
+        add.classList.add('is-busy');
+        readFileAsDataUrl(file, function (dataUrl) {
+          postJSON('/api/admin/gallery/add', { product: product, dataUrl: dataUrl }).then(function (res) {
+            if (res.ok && res.d.success) { renderGalleries(setGallery(galleries, product, res.d.gallery)); toast('Фото додано: ' + PRODUCT_LABELS[product], true); }
+            else if (res.status === 401) show('login');
+            else toast(res.d.error || 'Помилка', false);
+          }).catch(function () { toast('Помилка звʼязку', false); })
+            .finally(function () { add.classList.remove('is-busy'); });
+        });
+        input.value = '';
+      });
+      strip.appendChild(add);
+
+      block.appendChild(head); block.appendChild(strip); wrap.appendChild(block);
+    });
+  }
+  // локально оновити об'єкт галерей і повернути його (щоб re-render мав свіжі дані)
+  function setGallery(galleries, product, list) {
+    var g = Object.assign({}, galleries); g[product] = list; return g;
+  }
+
+  /* --- Окремі зображення --- */
   function renderImages(images) {
     var grid = document.getElementById('imggrid'); grid.innerHTML = '';
     Object.keys(IMAGE_LABELS).forEach(function (slot) {

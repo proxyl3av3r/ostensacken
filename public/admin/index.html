@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Адмін-панель — Osten-Sacken</title>
-  <link rel="icon" href="../favicon.svg?v=2" type="image/svg+xml" />
-  <link rel="stylesheet" href="../css/fonts.css?v=2" />
-  <link rel="stylesheet" href="./admin.css?v=2" />
+  <link rel="icon" href="../favicon.svg?v=4" type="image/svg+xml" />
+  <link rel="stylesheet" href="../css/fonts.css?v=4" />
+  <link rel="stylesheet" href="./admin.css?v=4" />
 </head>
 <body>
 
@@ -38,6 +38,7 @@
       <button class="tab" data-tab="faq">FAQ</button>
       <button class="tab" data-tab="texts">Тексти</button>
       <button class="tab" data-tab="images">Фото</button>
+      <button class="tab" data-tab="stock">Наявність</button>
     </nav>
 
     <!-- Замовлення -->
@@ -91,13 +92,27 @@
 
     <!-- Фото -->
     <section class="panel" data-panel="images" hidden>
-      <p class="panel__hint">Заміна зображень на сайті. PNG / JPG / WEBP, до 6 МБ.</p>
+      <h3 class="panel__h">Галерея карток товару</h3>
+      <p class="panel__hint">Додавайте фото в каруселі карток «Стандартний» та «Інтегрований». Порядок = порядок додавання. PNG / JPG / WEBP, до 6 МБ.</p>
+      <div id="galleries"></div>
+
+      <h3 class="panel__h" style="margin-top:28px">Окремі зображення сайту</h3>
+      <p class="panel__hint">Заміна конкретних картинок (hero, «Про нас», калібри тощо).</p>
       <div class="imggrid" id="imggrid"></div>
+    </section>
+
+    <!-- Наявність -->
+    <section class="panel" data-panel="stock" hidden>
+      <p class="panel__hint">Плашка «в наявності / немає» на картках товару та калібрах на сайті.</p>
+      <h3 class="panel__h">Типи глушників</h3>
+      <div class="stocklist" id="stock-products"></div>
+      <h3 class="panel__h" style="margin-top:22px">Калібри</h3>
+      <div class="stocklist" id="stock-calibers"></div>
     </section>
   </div>
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="./admin.js?v=2"></script>
+  <script src="./admin.js?v=4"></script>
 </body>
 </html>

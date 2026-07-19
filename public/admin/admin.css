@@ -83,7 +83,20 @@ select.status[data-s="В роботі"]{border-color:var(--accent);color:var(--a
 .field2{margin-bottom:16px;max-width:680px;}
 .field2 label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px;}
 
-/* ---------- Фото ---------- */
+/* ---------- Галерея карток товару ---------- */
+.panel__h{font-family:var(--display);font-size:18px;letter-spacing:.5px;margin:0 0 6px;}
+.gblock{background:var(--white);border:1px solid var(--line);padding:14px;margin-bottom:14px;}
+.gblock__head{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:10px;}
+.gstrip{display:flex;flex-wrap:wrap;gap:10px;}
+.gphoto{position:relative;flex:0 0 auto;width:120px;height:120px;border:1px solid var(--line-strong);background:var(--panel);}
+.gphoto img{width:100%;height:100%;object-fit:contain;}
+.gphoto__del{position:absolute;top:4px;right:4px;width:26px;height:26px;padding:0;line-height:1;border:1px solid var(--white);background:rgba(1,2,3,.72);color:#fff;font-size:13px;}
+.gphoto__del:hover{background:var(--accent);}
+.gadd{flex:0 0 auto;width:120px;height:120px;border:2px dashed var(--line-strong);background:var(--bg);display:grid;place-items:center;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s var(--ease);}
+.gadd:hover{border-color:var(--accent);color:var(--accent-dark);}
+.gadd.is-busy{opacity:.5;pointer-events:none;}
+
+/* ---------- Фото (одиночні) ---------- */
 .imggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
 .imgcard{background:var(--white);border:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:8px;}
 .imgcard__prev{height:130px;background:var(--panel);border:1px solid var(--line);display:grid;place-items:center;overflow:hidden;}
@@ -91,6 +104,16 @@ select.status[data-s="В роботі"]{border-color:var(--accent);color:var(--a
 .imgcard__name{font-size:13px;font-weight:600;}
 .imgcard__pick{display:inline-flex;align-items:center;justify-content:center;height:40px;font-size:13px;}
 .imgcard__status{font-size:12px;color:var(--muted);min-height:16px;}
+
+/* ---------- Наявність ---------- */
+.stocklist{display:flex;flex-direction:column;gap:8px;max-width:520px;}
+.stockrow{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--white);border:1px solid var(--line);padding:12px 16px;}
+.stockrow__name{font-size:15px;font-weight:600;}
+.stockbtn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border:1px solid;font-size:13px;font-weight:600;transition:all .18s var(--ease);}
+.stockbtn__dot{width:8px;height:8px;border-radius:50%;background:currentColor;}
+.stockbtn.is-in{color:#0f7a37;border-color:#16A34A;background:#EAF7EF;}
+.stockbtn.is-out{color:var(--muted);border-color:var(--line-strong);background:var(--panel);}
+.stockbtn:hover{filter:brightness(.96);}
 
 /* ---------- Toast ---------- */
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:12px 20px;font-size:14px;font-weight:600;border:2px solid var(--ink);background:var(--white);z-index:50;max-width:90vw;}

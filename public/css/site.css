@@ -161,9 +161,20 @@ a { color:inherit; text-decoration:none; }
    зброя довертається у горизонталь, підпис — червона H2, з'являється кнопка (Figma 27:132).
    Фіксована висота картки → немає стрибків сторінки. */
 .ammo-row { display:flex; gap:24px; align-items:stretch; }
-.ammo { flex:1 1 0; min-width:0; height:560px; margin:0; background:var(--panel); border:1px solid var(--line-strong);
+.ammo { position:relative; flex:1 1 0; min-width:0; height:560px; margin:0; background:var(--panel); border:1px solid var(--line-strong);
   display:flex; flex-direction:column; align-items:center; gap:16px; padding:18px 12px; overflow:hidden;
   transition:flex-grow .5s var(--ease), background .45s var(--ease), border-color .45s var(--ease); }
+
+/* ---- Плашка наявності (категорії/калібри) ---- */
+.avail { display:inline-flex; align-items:center; gap:7px; align-self:flex-start; font-family:var(--font-body);
+  font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.03em; line-height:1;
+  padding:6px 11px; border:1px solid; margin:0 0 14px; }
+.avail__dot { width:7px; height:7px; border-radius:50%; background:currentColor; flex:0 0 auto; }
+.avail--in { color:#0f7a37; border-color:#16A34A; background:#EAF7EF; }
+.avail--out { color:var(--muted); border-color:var(--line-strong); background:var(--panel); }
+.avail--ammo { position:absolute; top:12px; left:12px; margin:0; z-index:3; font-size:11px; padding:5px 9px;
+  background:var(--bg); }
+.avail--ammo.avail--in { background:#EAF7EF; }
 .ammo figcaption { font-family:var(--font-display); font-weight:400; font-size:clamp(20px,2vw,32px); text-transform:uppercase; color:var(--ink); white-space:nowrap; transition:color .4s var(--ease),font-size .45s var(--ease); }
 .ammo__img { position:relative; flex:1; width:100%; min-height:0; overflow:hidden; }
 .ammo__img img { position:absolute; top:50%; left:50%; width:400px; max-width:none; height:auto; transform:translate(-50%,-50%) rotate(-90deg); mix-blend-mode:multiply; transition:transform .55s var(--ease),width .55s var(--ease); }
@@ -189,8 +200,8 @@ a { color:inherit; text-decoration:none; }
 .pcell__note { font-size:13px; color:var(--muted); font-weight:400; }
 
 /* ---------- Steps (dark) ---------- */
-.steps-sec { background:var(--ink); color:var(--bg); position:relative; overflow:hidden; padding-bottom:0; }
-.steps-sec__head { margin:0 0 44px; }
+.steps-sec { background:var(--ink); color:var(--bg); position:relative; overflow:hidden; padding-top:60px; padding-bottom:0; }
+.steps-sec__head { margin:0 0 28px; }
 .steps-sec__title { font-family:var(--font-display); font-weight:400; font-size:clamp(30px,4.4vw,48px); text-transform:uppercase; line-height:1; margin:0 0 10px; }
 .steps-sec__sub { color:rgba(250,249,246,.6); font-size:clamp(18px,2vw,24px); margin:0; }
 .steps-sec__inner { display:grid; grid-template-columns:.82fr 1.18fr; gap:56px; align-items:center; }
@@ -313,6 +324,16 @@ a { color:inherit; text-decoration:none; }
 /* ============================================================ Responsive ============================================================ */
 @media (max-width:1100px){ .ammo__img { height:360px; } .ammo__img img { width:360px; } }
 @media (max-width:980px){
+  /* Планшет: ховаємо десктоп-навігацію у бургер, щоб шапка не вилазила за екран */
+  .nav, .hdr__cta { display:none; }
+  .burger { display:inline-flex; flex-direction:column; gap:5px; margin-left:auto; background:none; border:none; cursor:pointer; padding:8px; }
+  .burger span { width:26px; height:2px; background:var(--ink); transition:transform .3s var(--ease),opacity .3s var(--ease); }
+  .burger.is-open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .burger.is-open span:nth-child(2){opacity:0}
+  .burger.is-open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  .nav.is-open { display:flex; position:absolute; top:82px; left:0; right:0; flex-direction:column; gap:0; background:var(--bg); border-bottom:1px solid var(--line-strong); padding:8px 20px 16px; z-index:20; }
+  .nav.is-open a { padding:14px 0; border-bottom:1px solid var(--line); }
+
   .hero { min-height:0; display:block; }
   .hero__inner { display:flex; flex-direction:column; }
   .hero__content { max-width:none; order:2; }
@@ -329,18 +350,10 @@ a { color:inherit; text-decoration:none; }
 @media (max-width:760px){
   .section { padding:70px 0; }
   .container { padding-inline:20px; }
-  .nav, .hdr__cta { display:none; }
-  .burger { display:inline-flex; flex-direction:column; gap:5px; margin-left:auto; background:none; border:none; cursor:pointer; padding:8px; }
-  .burger span { width:26px; height:2px; background:var(--ink); transition:transform .3s var(--ease),opacity .3s var(--ease); }
-  .burger.is-open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
-  .burger.is-open span:nth-child(2){opacity:0}
-  .burger.is-open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
-  .nav.is-open { display:flex; position:absolute; top:82px; left:0; right:0; flex-direction:column; gap:0; background:var(--bg); border-bottom:1px solid var(--line-strong); padding:8px 20px 16px; }
-  .nav.is-open a { padding:14px 0; border-bottom:1px solid var(--line); }
-  /* Hero на мобільному: фото прибите до правого краю екрана (без відступу справа) */
-  .hero__media { align-self:flex-end; width:auto; max-width:none; height:auto;
-    margin:0 -20px 10px 0; justify-content:flex-end; }
-  .hero__img { width:auto; max-width:none; height:auto; max-height:50vh; }
+  /* Hero на мобільному: фото повністю в кадрі (не обрізане), відцентроване */
+  .hero__media { align-self:center; width:100%; max-width:none; height:auto;
+    margin:0 auto 14px; justify-content:center; }
+  .hero__img { width:auto; max-width:100%; height:auto; max-height:44vh; margin:0 auto; }
 
   .stats__grid { flex-direction:column; gap:16px; text-align:center; align-items:center; }
   .stat { align-items:center; padding:0; width:min(280px,80%); }
