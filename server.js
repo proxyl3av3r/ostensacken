@@ -67,7 +67,8 @@ app.use((req, res, next) => {
 /* ---------- Парсери тіла: маленький ліміт скрізь, більший — лише на аплоуд ---------- */
 const jsonBig = express.json({ limit: '12mb' });   // base64 6 МБ зображення ≈ 8 МБ + запас
 const jsonSmall = express.json({ limit: '32kb' });
-app.use((req, res, next) => (req.path === '/api/admin/upload' ? jsonBig : jsonSmall)(req, res, next));
+const BIG_BODY_PATHS = ['/api/admin/upload', '/api/admin/gallery/add'];
+app.use((req, res, next) => (BIG_BODY_PATHS.indexOf(req.path) >= 0 ? jsonBig : jsonSmall)(req, res, next));
 
 /* ---------- Валідація/санітизація замовлення (дзеркалить клієнтську) ---------- */
 function clean(s) {
