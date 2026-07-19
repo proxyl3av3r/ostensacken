@@ -12,6 +12,7 @@
      тож XSS з боку збережених даних неможливий. Якщо запит впав — лишається
      статична розмітка (дефолти), сайт не ламається. */
   (function hydrate() {
+    var GALLERIES = null;   // галереї з адмінки (звичайні + «з покриттям»)
     fetch('/api/content', { headers: { 'Accept': 'application/json' } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (c) { if (c) applyContent(c); })
@@ -44,8 +45,10 @@
       }
       // Галереї карток товару (перебудова слайдів + дотів + ре-ініт каруселі)
       if (c.galleries) {
-        applyGallery('standard', c.galleries.standard);
-        applyGallery('integrated', c.galleries.integrated);
+        GALLERIES = c.galleries;
+        window.__renderProdGallery = renderProdGallery;   // викликає тумблер покриття
+        renderProdGallery('standard');
+        renderProdGallery('integrated');
       }
       // Ціни
       if (Array.isArray(c.prices)) {
@@ -81,6 +84,22 @@
       el.textContent = text == null ? '' : text;
       return el;
     }
+    /* Поточний стан тумблера «Гумове покриття» на картці */
+    function currentCoating(product) {
+      var prod = document.querySelector('.prod[data-product="' + product + '"]');
+      var on = prod && prod.querySelector('.toggle__opt.is-on');
+      return on ? on.getAttribute('data-coating') : 'Ні';
+    }
+    /* Показати галерею картки з урахуванням покриття:
+       «Так» → фото з покриттям; якщо їх ще не додали — звичайні. */
+    function renderProdGallery(product, coating) {
+      if (!GALLERIES) return;
+      if (!coating) coating = currentCoating(product);
+      var key = product + (coating === 'Так' ? '_coated' : '');
+      var photos = (GALLERIES[key] && GALLERIES[key].length) ? GALLERIES[key] : GALLERIES[product];
+      applyGallery(product, photos);
+    }
+
     function applyGallery(type, photos) {
       if (!Array.isArray(photos) || !photos.length) return;
       var prod = document.querySelector('.prod[data-product="' + type + '"]');
@@ -162,12 +181,17 @@
     } else { animate(); }
   });
 
-  /* ---- Coating toggle (Так/Ні) ---- */
+  /* ---- Coating toggle (Так/Ні) — перемикає ще й фото картки ---- */
   document.querySelectorAll('.toggle').forEach(function (group) {
     group.querySelectorAll('.toggle__opt').forEach(function (btn) {
       btn.addEventListener('click', function () {
         group.querySelectorAll('.toggle__opt').forEach(function (b) { b.classList.remove('is-on'); });
         btn.classList.add('is-on');
+        var prod = btn.closest('.prod');
+        var product = prod && prod.getAttribute('data-product');
+        if (product && typeof window.__renderProdGallery === 'function') {
+          window.__renderProdGallery(product, btn.getAttribute('data-coating'));
+        }
       });
     });
   });
