@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Адмін-панель — Osten-Sacken</title>
-  <link rel="icon" href="../favicon.svg?v=4" type="image/svg+xml" />
-  <link rel="stylesheet" href="../css/fonts.css?v=4" />
-  <link rel="stylesheet" href="./admin.css?v=4" />
+  <link rel="icon" href="../favicon.svg?v=5" type="image/svg+xml" />
+  <link rel="stylesheet" href="../css/fonts.css?v=5" />
+  <link rel="stylesheet" href="./admin.css?v=5" />
 </head>
 <body>
 
@@ -93,7 +93,7 @@
     <!-- Фото -->
     <section class="panel" data-panel="images" hidden>
       <h3 class="panel__h">Галерея карток товару</h3>
-      <p class="panel__hint">Додавайте фото в каруселі карток «Стандартний» та «Інтегрований». Порядок = порядок додавання. PNG / JPG / WEBP, до 6 МБ.</p>
+      <p class="panel__hint">Фото для каруселі. «З покриттям» показується у вікні замовлення, коли клієнт обирає гумове покриття (Так). Якщо там порожньо — показуються звичайні фото. PNG / JPG / WEBP, до 6 МБ.</p>
       <div id="galleries"></div>
 
       <h3 class="panel__h" style="margin-top:28px">Окремі зображення сайту</h3>
@@ -103,16 +103,23 @@
 
     <!-- Наявність -->
     <section class="panel" data-panel="stock" hidden>
-      <p class="panel__hint">Плашка «в наявності / немає» на картках товару та калібрах на сайті.</p>
-      <h3 class="panel__h">Типи глушників</h3>
-      <div class="stocklist" id="stock-products"></div>
-      <h3 class="panel__h" style="margin-top:22px">Калібри</h3>
-      <div class="stocklist" id="stock-calibers"></div>
+      <p class="panel__hint">Наявність за конкретною комбінацією параметрів. У вікні замовлення клієнт побачить «В наявності: N шт», якщо його вибір збігається із записом нижче. Решта — «виготовимо під замовлення».</p>
+      <h3 class="panel__h">Додати позицію в наявність</h3>
+      <div class="stockform">
+        <label>Тип<select id="st-type"></select></label>
+        <label>Калібр<select id="st-caliber"></select></label>
+        <label>Хід різьби<select id="st-thread"></select></label>
+        <label>Покриття<select id="st-coating"></select></label>
+        <label>К-сть<input type="number" id="st-qty" min="1" max="9999" value="1" /></label>
+        <button class="btn btn--accent" id="stock-add" type="button">Додати</button>
+      </div>
+      <h3 class="panel__h" style="margin-top:24px">Позиції в наявності</h3>
+      <div class="stocklist" id="stock-list"></div>
     </section>
   </div>
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="./admin.js?v=4"></script>
+  <script src="./admin.js?v=5"></script>
 </body>
 </html>

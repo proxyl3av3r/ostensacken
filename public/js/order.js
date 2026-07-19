@@ -38,9 +38,22 @@
   };
   var COATING_ADD = 100;
 
-  // Фото товару під карусель (реальне + плейсхолдери, як у картках товару)
-  function galleryFor(/* type, coating */) {
-    return [{ src: PLACEHOLDER }, { ph: 'Фото 2' }, { ph: 'Фото 3' }];
+  // Керований контент (галереї + наявність) — тягнемо з /api/content
+  var CONTENT = { galleries: null, stock: {} };
+  function galleryKey(type, coating) {
+    return (type === 'Інтегрований' ? 'integrated' : 'standard') + (coating === 'Так' ? '_coated' : '');
+  }
+  // Фото під карусель: варіант «з покриттям» при coating=Так, інакше звичайний;
+  // якщо для покриття фото ще не додані — показуємо звичайні.
+  function galleryFor(type, coating) {
+    var g = CONTENT.galleries;
+    if (g) {
+      var base = galleryKey(type, 'Ні');
+      var key = galleryKey(type, coating);
+      var list = (g[key] && g[key].length) ? g[key] : (g[base] && g[base].length ? g[base] : null);
+      if (list && list.length) return list.map(function (p) { return { src: '/' + String(p).replace(/^\/+/, '') }; });
+    }
+    return [{ src: PLACEHOLDER }];
   }
 
   var CALIBER_MAP = {
@@ -122,12 +135,40 @@
     }).join('');
   }
 
-  /* ---------- Кнопка config ---------- */
+  /* ---------- Кнопка config + наявність ---------- */
+  function refreshStock() {
+    var box = document.getElementById('op-stock');
+    var txt = document.getElementById('op-stock-text');
+    if (!box || !txt) return;
+    if (!state.caliber || !state.thread) { box.hidden = true; return; }
+    var key = [state.type, state.caliber, state.thread, state.coating].join('|');
+    var qty = CONTENT.stock && CONTENT.stock[key];
+    box.hidden = false;
+    if (qty && qty > 0) {
+      box.className = 'op-stock op-stock--in';
+      txt.textContent = 'В наявності: ' + qty + ' шт';
+    } else {
+      box.className = 'op-stock op-stock--out';
+      txt.textContent = 'Немає в наявності — виготовимо під замовлення';
+    }
+  }
   function refreshAction() {
     var ready = !!state.caliber && !!state.thread;
     orderBtn.disabled = !ready;
     hint.hidden = ready;
+    refreshStock();
   }
+
+  /* ---------- Керований контент ---------- */
+  fetch('/api/content', { headers: { 'Accept': 'application/json' } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (c) {
+      if (!c) return;
+      CONTENT.galleries = c.galleries || null;
+      CONTENT.stock = c.stock || {};
+      if (!modal.hidden) { buildGallery(); refreshStock(); } // якщо модалка вже відкрита
+    })
+    .catch(function () {});
 
   function renderProduct() {
     elTitle.textContent = state.type;

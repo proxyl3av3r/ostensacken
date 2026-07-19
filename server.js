@@ -376,16 +376,16 @@ app.post('/api/admin/upload', requireAdmin, requireCsrf, (req, res) => {
   }
 });
 
-// Галерея карток товару: ДОДАТИ фото
+// Галерея карток товару: ДОДАТИ фото (key = standard|standard_coated|integrated|integrated_coated)
 app.post('/api/admin/gallery/add', requireAdmin, requireCsrf, (req, res) => {
-  const product = String((req.body && req.body.product) || '');
-  if (content.PRODUCTS.indexOf(product) < 0) return res.status(400).json({ error: 'Невідома картка' });
+  const key = String((req.body && req.body.key) || '');
+  if (content.GALLERY_KEYS.indexOf(key) < 0) return res.status(400).json({ error: 'Невідома галерея' });
   const dec = decodeImage(req.body && req.body.dataUrl);
   if (dec.error) return res.status(400).json({ error: dec.error });
   try {
-    const rel = saveImageFile(dec.buf, dec.ext, 'prod-' + product);
-    const gallery = content.addGalleryPhoto(product, rel);
-    res.json({ success: true, product: product, gallery: gallery });
+    const rel = saveImageFile(dec.buf, dec.ext, 'prod-' + key);
+    const gallery = content.addGalleryPhoto(key, rel);
+    res.json({ success: true, key: key, gallery: gallery });
   } catch (e) {
     res.status(400).json({ error: e.message || 'Не вдалося додати' });
   }
@@ -393,27 +393,34 @@ app.post('/api/admin/gallery/add', requireAdmin, requireCsrf, (req, res) => {
 
 // Галерея карток товару: ВИДАЛИТИ фото за індексом
 app.post('/api/admin/gallery/remove', requireAdmin, requireCsrf, (req, res) => {
-  const product = String((req.body && req.body.product) || '');
-  if (content.PRODUCTS.indexOf(product) < 0) return res.status(400).json({ error: 'Невідома картка' });
+  const key = String((req.body && req.body.key) || '');
+  if (content.GALLERY_KEYS.indexOf(key) < 0) return res.status(400).json({ error: 'Невідома галерея' });
   try {
-    const out = content.removeGalleryPhoto(product, req.body && req.body.index);
+    const out = content.removeGalleryPhoto(key, req.body && req.body.index);
     removeUploadedFile(out.removed);
-    res.json({ success: true, product: product, gallery: out.gallery });
+    res.json({ success: true, key: key, gallery: out.gallery });
   } catch (e) {
     res.status(400).json({ error: e.message || 'Не вдалося видалити' });
   }
 });
 
-// Наявність: перемкнути стан категорії/підкатегорії
-app.post('/api/admin/availability', requireAdmin, requireCsrf, (req, res) => {
-  const kind = String((req.body && req.body.kind) || '');
-  const key = String((req.body && req.body.key) || '');
-  const value = !!(req.body && req.body.value);
+// Наявність за комбінацією: встановити кількість (qty<=0 — прибрати)
+app.post('/api/admin/stock/set', requireAdmin, requireCsrf, (req, res) => {
+  const b = req.body || {};
   try {
-    const availability = content.setAvailability(kind, key, value);
-    res.json({ success: true, availability: availability });
+    const stock = content.setStock(b.type, b.caliber, b.thread, b.coating, b.qty);
+    res.json({ success: true, stock: stock });
   } catch (e) {
     res.status(400).json({ error: e.message || 'Не вдалося зберегти' });
+  }
+});
+// Наявність: прибрати запис за ключем
+app.post('/api/admin/stock/remove', requireAdmin, requireCsrf, (req, res) => {
+  try {
+    const stock = content.removeStock((req.body && req.body.key) || '');
+    res.json({ success: true, stock: stock });
+  } catch (e) {
+    res.status(400).json({ error: e.message || 'Не вдалося видалити' });
   }
 });
 

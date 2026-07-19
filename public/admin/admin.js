@@ -15,8 +15,16 @@
   var toastEl = document.getElementById('toast');
 
   var STATUSES = ['Нове', 'В роботі', 'Виконано', 'Скасовано'];
-  var PRODUCT_LABELS = { standard: 'Стандартний', integrated: 'Інтегрований' };
-  var CALIBER_LABELS = { 'ammo-22lr': '.22 LR', 'ammo-223': '.223', 'ammo-545': '5.45', 'ammo-30': '.30', 'ammo-338': '.338 LM/WM' };
+  // Галереї фото товару: звичайне + «з покриттям» для кожного типу
+  var GALLERY_LABELS = {
+    standard: 'Стандартний — звичайне', standard_coated: 'Стандартний — з покриттям',
+    integrated: 'Інтегрований — звичайне', integrated_coated: 'Інтегрований — з покриттям'
+  };
+  // Значення параметрів — ТОЧНО як у чіпах окна замовлення (щоб ключ наявності збігався)
+  var OPT_TYPE = ['Стандартний', 'Інтегрований'];
+  var OPT_CALIBER = ['.22 LR', '.223', '5.45', '.30', '.338 LM', '.338 WM'];
+  var OPT_THREAD = ['1/2" 28 UNEF', '9/16"24', '1/2"20', '5/8"24', '14х1', '15х1', '16х1', '17х1', '18х1', '24 х 1.5', '3/4"24', '3/4"20', 'Індивідуально'];
+  var OPT_COATING = ['Ні', 'Так'];
   var IMAGE_LABELS = {
     hero: 'Hero — головне фото', 'supp-standard': 'Стандартний глушник (карусель)',
     about: 'Фото «Про нас»', steps: 'Гвинтівка (3 кроки)',
@@ -177,44 +185,57 @@
       fillTexts(c.texts || {});
       renderGalleries(c.galleries || {});
       renderImages(c.images || {});
-      renderAvailability(c.availability || {});
+      renderStock(c.stock || {});
     }).catch(function () {});
   }
 
-  /* --- Наявність --- */
-  function stockRow(kind, key, label, inStock) {
-    var row = document.createElement('div'); row.className = 'stockrow';
-    var name = document.createElement('span'); name.className = 'stockrow__name'; name.textContent = label;
-    var btn = document.createElement('button'); btn.type = 'button';
-    function paint(on) {
-      btn.className = 'stockbtn ' + (on ? 'is-in' : 'is-out');
-      btn.innerHTML = '<span class="stockbtn__dot"></span>' + (on ? 'В наявності' : 'Немає');
+  /* --- Наявність за комбінацією параметрів --- */
+  function fillSelect(sel, opts) {
+    sel.innerHTML = opts.map(function (o) { return '<option value="' + esc(o) + '">' + esc(o) + '</option>'; }).join('');
+  }
+  function renderStock(stock) {
+    // список наявних комбінацій
+    var listBox = document.getElementById('stock-list'); listBox.innerHTML = '';
+    var keys = Object.keys(stock || {});
+    if (!keys.length) {
+      listBox.innerHTML = '<div class="stock-empty">Поки немає жодної позиції в наявності. Усе виготовляється під замовлення.</div>';
+    } else {
+      keys.forEach(function (key) {
+        var parts = key.split('|');
+        var row = document.createElement('div'); row.className = 'stockrow';
+        var name = document.createElement('span'); name.className = 'stockrow__name';
+        name.textContent = parts.join(' · ') + '  →  ' + stock[key] + ' шт';
+        var del = document.createElement('button'); del.className = 'btn btn--del'; del.type = 'button'; del.textContent = '✕';
+        del.addEventListener('click', function () {
+          del.disabled = true;
+          postJSON('/api/admin/stock/remove', { key: key }).then(function (res) {
+            if (res.ok && res.d.success) { renderStock(res.d.stock); toast('Видалено', true); }
+            else if (res.status === 401) show('login');
+            else { toast(res.d.error || 'Помилка', false); del.disabled = false; }
+          }).catch(function () { del.disabled = false; });
+        });
+        row.appendChild(name); row.appendChild(del); listBox.appendChild(row);
+      });
     }
-    paint(inStock);
-    btn.addEventListener('click', function () {
-      var next = !(btn.className.indexOf('is-in') >= 0);
-      btn.disabled = true;
-      postJSON('/api/admin/availability', { kind: kind, key: key, value: next }).then(function (res) {
-        if (res.ok && res.d.success) { paint(next); toast('Збережено: ' + label, true); }
+  }
+  // Форма додавання позиції наявності
+  (function initStockForm() {
+    var t = document.getElementById('st-type'), c = document.getElementById('st-caliber'),
+        th = document.getElementById('st-thread'), co = document.getElementById('st-coating');
+    if (!t) return;
+    fillSelect(t, OPT_TYPE); fillSelect(c, OPT_CALIBER); fillSelect(th, OPT_THREAD); fillSelect(co, OPT_COATING);
+    document.getElementById('stock-add').addEventListener('click', function () {
+      var qty = parseInt(document.getElementById('st-qty').value, 10);
+      if (!(qty > 0)) { toast('Вкажіть кількість (>0)', false); return; }
+      postJSON('/api/admin/stock/set', {
+        type: t.value, caliber: c.value, thread: th.value, coating: co.value, qty: qty
+      }).then(function (res) {
+        if (res.ok && res.d.success) { renderStock(res.d.stock); toast('Додано в наявність', true); }
         else if (res.status === 401) show('login');
         else toast(res.d.error || 'Помилка', false);
-      }).catch(function () { toast('Помилка звʼязку', false); })
-        .finally(function () { btn.disabled = false; });
+      }).catch(function () { toast('Помилка звʼязку', false); });
     });
-    row.appendChild(name); row.appendChild(btn);
-    return row;
-  }
-  function renderAvailability(av) {
-    var prod = av.products || {}, cal = av.calibers || {};
-    var pbox = document.getElementById('stock-products'); pbox.innerHTML = '';
-    Object.keys(PRODUCT_LABELS).forEach(function (k) {
-      pbox.appendChild(stockRow('products', k, PRODUCT_LABELS[k], prod[k] !== false));
-    });
-    var cbox = document.getElementById('stock-calibers'); cbox.innerHTML = '';
-    Object.keys(CALIBER_LABELS).forEach(function (k) {
-      cbox.appendChild(stockRow('calibers', k, CALIBER_LABELS[k], cal[k] !== false));
-    });
-  }
+  })();
 
   /* --- Ціни --- */
   function priceRow(p) {
@@ -309,11 +330,11 @@
   }
   function renderGalleries(galleries) {
     var wrap = document.getElementById('galleries'); wrap.innerHTML = '';
-    Object.keys(PRODUCT_LABELS).forEach(function (product) {
-      var photos = Array.isArray(galleries[product]) ? galleries[product] : [];
+    Object.keys(GALLERY_LABELS).forEach(function (key) {
+      var photos = Array.isArray(galleries[key]) ? galleries[key] : [];
       var block = document.createElement('div'); block.className = 'gblock';
       var head = document.createElement('div'); head.className = 'gblock__head';
-      head.textContent = PRODUCT_LABELS[product] + ' — ' + photos.length + ' фото';
+      head.textContent = GALLERY_LABELS[key] + ' — ' + photos.length + ' фото';
       var strip = document.createElement('div'); strip.className = 'gstrip';
 
       photos.forEach(function (p, idx) {
@@ -324,8 +345,8 @@
         del.addEventListener('click', function () {
           if (!confirm('Видалити це фото?')) return;
           del.disabled = true;
-          postJSON('/api/admin/gallery/remove', { product: product, index: idx }).then(function (res) {
-            if (res.ok && res.d.success) { renderGalleries(setGallery(galleries, product, res.d.gallery)); toast('Фото видалено', true); }
+          postJSON('/api/admin/gallery/remove', { key: key, index: idx }).then(function (res) {
+            if (res.ok && res.d.success) { renderGalleries(setGallery(galleries, key, res.d.gallery)); toast('Фото видалено', true); }
             else if (res.status === 401) show('login');
             else { toast(res.d.error || 'Помилка', false); del.disabled = false; }
           }).catch(function () { del.disabled = false; });
@@ -341,8 +362,8 @@
         if (file.size > 6 * 1024 * 1024) { toast('Файл завеликий (макс 6 МБ)', false); input.value = ''; return; }
         add.classList.add('is-busy');
         readFileAsDataUrl(file, function (dataUrl) {
-          postJSON('/api/admin/gallery/add', { product: product, dataUrl: dataUrl }).then(function (res) {
-            if (res.ok && res.d.success) { renderGalleries(setGallery(galleries, product, res.d.gallery)); toast('Фото додано: ' + PRODUCT_LABELS[product], true); }
+          postJSON('/api/admin/gallery/add', { key: key, dataUrl: dataUrl }).then(function (res) {
+            if (res.ok && res.d.success) { renderGalleries(setGallery(galleries, key, res.d.gallery)); toast('Фото додано: ' + GALLERY_LABELS[key], true); }
             else if (res.status === 401) show('login');
             else toast(res.d.error || 'Помилка', false);
           }).catch(function () { toast('Помилка звʼязку', false); })
@@ -356,8 +377,8 @@
     });
   }
   // локально оновити об'єкт галерей і повернути його (щоб re-render мав свіжі дані)
-  function setGallery(galleries, product, list) {
-    var g = Object.assign({}, galleries); g[product] = list; return g;
+  function setGallery(galleries, key, list) {
+    var g = Object.assign({}, galleries); g[key] = list; return g;
   }
 
   /* --- Окремі зображення --- */

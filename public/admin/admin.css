@@ -105,15 +105,17 @@ select.status[data-s="В роботі"]{border-color:var(--accent);color:var(--a
 .imgcard__pick{display:inline-flex;align-items:center;justify-content:center;height:40px;font-size:13px;}
 .imgcard__status{font-size:12px;color:var(--muted);min-height:16px;}
 
-/* ---------- Наявність ---------- */
-.stocklist{display:flex;flex-direction:column;gap:8px;max-width:520px;}
+/* ---------- Наявність (комбінації) ---------- */
+.stockform{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;background:var(--white);border:1px solid var(--line);padding:14px 16px;}
+.stockform label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:var(--muted);}
+.stockform select,.stockform input{height:42px;padding:0 10px;border:2px solid var(--line-strong);background:var(--bg);font-family:var(--font);font-size:14px;border-radius:0;outline:none;}
+.stockform select:focus,.stockform input:focus{border-color:var(--ink);}
+.stockform input#st-qty{width:80px;}
+.stockform .btn{height:42px;}
+.stocklist{display:flex;flex-direction:column;gap:8px;max-width:760px;}
 .stockrow{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--white);border:1px solid var(--line);padding:12px 16px;}
-.stockrow__name{font-size:15px;font-weight:600;}
-.stockbtn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border:1px solid;font-size:13px;font-weight:600;transition:all .18s var(--ease);}
-.stockbtn__dot{width:8px;height:8px;border-radius:50%;background:currentColor;}
-.stockbtn.is-in{color:#0f7a37;border-color:#16A34A;background:#EAF7EF;}
-.stockbtn.is-out{color:var(--muted);border-color:var(--line-strong);background:var(--panel);}
-.stockbtn:hover{filter:brightness(.96);}
+.stockrow__name{font-size:14px;font-weight:600;}
+.stock-empty{color:var(--muted);font-size:14px;padding:16px;border:1px dashed var(--line-strong);}
 
 /* ---------- Toast ---------- */
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:12px 20px;font-size:14px;font-weight:600;border:2px solid var(--ink);background:var(--white);z-index:50;max-width:90vw;}

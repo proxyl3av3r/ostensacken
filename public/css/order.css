@@ -64,8 +64,8 @@ body.omodal-open { overflow:hidden; }
   background:var(--white); border:1px solid var(--line-strong); overflow:hidden;
 }
 .op-figure__track { display:flex; height:100%; transition:transform .5s var(--ease); }
-.op-figure__slide { flex:0 0 100%; height:100%; display:grid; place-items:center; padding:26px; }
-.op-figure__slide img { width:auto; max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply; }
+.op-figure__slide { flex:0 0 100%; height:100%; display:grid; place-items:center; padding:0; }
+.op-figure__slide img { width:100%; height:100%; object-fit:cover; }
 .op-figure__slide--ph {
   flex-direction:column; color:var(--line-strong); text-align:center; font-size:18px; font-weight:600;
   background:repeating-linear-gradient(45deg,#f0efec,#f0efec 14px,#eae9e5 14px,#eae9e5 28px);
@@ -115,25 +115,34 @@ body.omodal-open { overflow:hidden; }
 .op-chip:hover { border-color:var(--ink); }
 .op-chip.is-sel { background:var(--ink); color:var(--bg); border-color:var(--ink); }
 
-/* Лічильник */
-.op-counter { display:flex; align-items:center; }
+/* Лічильник — єдина рамка навколо, внутрішні роздільники (без «зникнення» рамки) */
+.op-counter { display:inline-flex; align-items:stretch; width:max-content; border:2px solid var(--step-off); background:var(--bg); }
 .op-counter__btn {
   width:48px; height:48px; display:grid; place-items:center;
-  background:var(--bg); border:2px solid var(--step-off); color:var(--ink);
-  cursor:pointer; border-radius:0; margin-left:-2px; transition:border-color .18s var(--ease),color .18s var(--ease);
+  background:transparent; border:0; color:var(--ink);
+  cursor:pointer; border-radius:0; transition:background .18s var(--ease),color .18s var(--ease);
 }
-.op-counter__btn:first-child { margin-left:0; }
-.op-counter__btn:hover { border-color:var(--ink); }
+.op-counter__btn:first-child { border-right:2px solid var(--step-off); }
+.op-counter__btn:last-child { border-left:2px solid var(--step-off); }
+.op-counter__btn:hover { background:var(--panel); color:var(--accent); }
 .op-counter__btn svg { width:20px; height:20px; }
 .op-counter__val {
-  width:56px; height:48px; display:grid; place-items:center; margin-left:-2px;
-  background:var(--bg); border:2px solid var(--step-off);
+  width:56px; height:48px; display:grid; place-items:center; background:transparent;
   font-family:var(--font-body); font-weight:500; font-size:18px; color:var(--ink); user-select:none;
 }
 
 /* Дія (кнопка + підказка) */
 .op-action { display:flex; flex-direction:column; gap:10px; margin-top:32px; }
+.op-order-row { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
 .op-order { align-self:flex-start; }
+
+/* Плашка наявності поруч із кнопкою */
+.op-stock { display:inline-flex; align-items:center; gap:9px; font-family:var(--font-body);
+  font-weight:600; font-size:15px; letter-spacing:.01em; line-height:1.1; padding:9px 15px; border:1px solid; }
+.op-stock[hidden] { display:none; }
+.op-stock__dot { width:9px; height:9px; border-radius:50%; background:currentColor; flex:0 0 auto; }
+.op-stock--in { color:#0f7a37; border-color:#16A34A; background:#EAF7EF; }
+.op-stock--out { color:var(--muted); border-color:var(--line-strong); background:var(--panel); }
 .op-order:disabled { background:#FFE0E0; border-color:#FFE0E0; color:#FFA0A0; cursor:not-allowed; box-shadow:none; padding-right:26px; }
 .op-order:disabled::after { display:none; }
 .op-order:disabled:hover { background:#FFE0E0; border-color:#FFE0E0; padding-right:26px; }

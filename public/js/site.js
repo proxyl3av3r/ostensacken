@@ -47,8 +47,6 @@
         applyGallery('standard', c.galleries.standard);
         applyGallery('integrated', c.galleries.integrated);
       }
-      // Наявність (плашки на картках товару та калібрах)
-      if (c.availability) applyAvailability(c.availability);
       // Ціни
       if (Array.isArray(c.prices)) {
         var table = document.querySelector('[data-prices]');
@@ -109,33 +107,6 @@
         });
       }
       if (typeof window.__mountCarousel === 'function') window.__mountCarousel(car);
-    }
-    function setBadge(container, inStock, variant) {
-      if (!container) return;
-      var badge = container.querySelector(':scope > .avail');
-      if (!badge) {
-        badge = document.createElement('span');
-        badge.className = 'avail';
-        if (variant === 'ammo') container.insertBefore(badge, container.firstChild);
-        else container.insertBefore(badge, container.firstChild);
-      }
-      badge.className = 'avail avail--' + (inStock ? 'in' : 'out') + (variant === 'ammo' ? ' avail--ammo' : '');
-      badge.innerHTML = '<span class="avail__dot"></span>' + (inStock ? 'В наявності' : 'Немає в наявності');
-    }
-    function applyAvailability(av) {
-      if (av.products) {
-        Object.keys(av.products).forEach(function (type) {
-          var prod = document.querySelector('.prod[data-product="' + type + '"]');
-          if (prod) setBadge(prod.querySelector('.prod__body'), av.products[type], 'prod');
-        });
-      }
-      if (av.calibers) {
-        document.querySelectorAll('.ammo').forEach(function (fig) {
-          var img = fig.querySelector('img[data-img]'); if (!img) return;
-          var key = img.getAttribute('data-img');
-          if (Object.prototype.hasOwnProperty.call(av.calibers, key)) setBadge(fig, av.calibers[key], 'ammo');
-        });
-      }
     }
   })();
 

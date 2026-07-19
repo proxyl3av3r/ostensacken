@@ -6,10 +6,10 @@
   <title>Osten-Sacken — Титанові глушники під замовлення</title>
   <meta name="description" content="Індивідуальне виготовлення титанових глушників для будь-якого калібру нарізної зброї. Максимальна точність, надійність і бездоганна якість." />
 
-  <link rel="icon" href="./favicon.svg?v=4" type="image/svg+xml" />
-  <link rel="stylesheet" href="./css/fonts.css?v=4" />
-  <link rel="stylesheet" href="./css/site.css?v=4" />
-  <link rel="stylesheet" href="./css/order.css?v=4" />
+  <link rel="icon" href="./favicon.svg?v=5" type="image/svg+xml" />
+  <link rel="stylesheet" href="./css/fonts.css?v=5" />
+  <link rel="stylesheet" href="./css/site.css?v=5" />
+  <link rel="stylesheet" href="./css/order.css?v=5" />
 </head>
 <body>
 
@@ -471,7 +471,10 @@
               </div>
             </div>
             <div class="op-action">
-              <button type="button" class="btn btn--primary op-order" id="op-order" disabled><span class="btn__label">Замовити</span></button>
+              <div class="op-order-row">
+                <button type="button" class="btn btn--primary op-order" id="op-order" disabled><span class="btn__label">Замовити</span></button>
+                <span class="op-stock" id="op-stock" hidden><span class="op-stock__dot"></span><span id="op-stock-text"></span></span>
+              </div>
               <p class="op-hint" id="op-hint">Оберіть калібр та хід різьби*</p>
             </div>
           </div>
@@ -521,7 +524,7 @@
     </div>
   </div>
 
-  <script src="./js/order.js?v=4"></script>
-  <script src="./js/site.js?v=4"></script>
+  <script src="./js/order.js?v=5"></script>
+  <script src="./js/site.js?v=5"></script>
 </body>
 </html>
