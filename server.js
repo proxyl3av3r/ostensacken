@@ -429,7 +429,10 @@ app.post('/api/admin/stock/remove', requireAdmin, requireCsrf, (req, res) => {
 app.use(express.static(PUBLIC_DIR, { extensions: ['html'] }));
 app.get('/', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 
-app.listen(PORT, () => {
-  console.log('Osten-Sacken server on http://127.0.0.1:' + PORT +
+// Слухаємо ЛИШЕ localhost — назовні порт 3000 недоступний, весь трафік іде через nginx
+// (де є HTTPS, security-заголовки та rate-limit). Змінна HOST дозволяє перевизначити за потреби.
+const HOST = process.env.HOST || '127.0.0.1';
+app.listen(PORT, HOST, () => {
+  console.log('Osten-Sacken server on http://' + HOST + ':' + PORT +
     '  (resend: ' + (!!resend) + ', to: ' + (TO_EMAIL || '—') + ', admin: ' + ADMIN_CONFIGURED + ')');
 });
