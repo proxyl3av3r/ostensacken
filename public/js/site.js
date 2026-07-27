@@ -54,6 +54,8 @@
         renderProdGallery('standard');
         renderProdGallery('integrated');
       }
+      // Відео-відгуки (перебудова треку з урахуванням ліміту показу) + ре-ініт каруселі
+      if (c.reviews) renderReviews(c.reviews);
       // Ціни
       if (Array.isArray(c.prices)) {
         var table = document.querySelector('[data-prices]');
@@ -130,6 +132,41 @@
         });
       }
       if (typeof window.__mountCarousel === 'function') window.__mountCarousel(car);
+    }
+
+    /* Кнопки керування відео (звук + play) — статична розмітка, без даних користувача. */
+    var REVIEW_CTRLS =
+      '<button class="review__sound" type="button" aria-label="Увімкнути звук">' +
+      '<svg class="ic-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5l4 5M21 9.5l-4 5"/></svg>' +
+      '<svg class="ic-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.7 6a8.5 8.5 0 0 1 0 12"/></svg>' +
+      '</button>' +
+      '<button class="review__play" type="button" aria-label="Відтворити">' +
+      '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>';
+
+    /* Перебудова треку відео-відгуків зі списку в контенті з урахуванням ліміту показу.
+       src підставляється лише як атрибут <source> через DOM (не innerHTML) — без ін'єкцій. */
+    function renderReviews(reviews) {
+      var track = document.getElementById('reviews-track');
+      if (!track || !reviews) return;
+      var vids = Array.isArray(reviews.videos) ? reviews.videos.slice() : [];
+      var limit = parseInt(reviews.limit, 10);
+      if (limit > 0) vids = vids.slice(0, limit);
+      if (!vids.length) return;   // порожньо — лишаємо статичну розмітку
+      track.innerHTML = '';
+      vids.forEach(function (src) {
+        var fig = document.createElement('figure'); fig.className = 'review is-paused';
+        var video = document.createElement('video'); video.className = 'review__video';
+        video.loop = true; video.muted = true; video.preload = 'metadata';
+        video.setAttribute('playsinline', ''); video.playsInline = true;
+        var source = document.createElement('source');
+        source.src = '/' + String(src).replace(/^\/+/, '');
+        source.type = /\.webm$/i.test(src) ? 'video/webm' : 'video/mp4';
+        video.appendChild(source);
+        fig.appendChild(video);
+        fig.insertAdjacentHTML('beforeend', REVIEW_CTRLS);
+        track.appendChild(fig);
+      });
+      if (typeof window.__initReviews === 'function') window.__initReviews();
     }
   })();
 
@@ -252,8 +289,10 @@
     setTimeout(apply, 300);
   })();
 
-  /* ---- Reviews: відео-відгуки (звук / play-pause / автоплей у в'юпорті / навігація) ---- */
-  (function () {
+  /* ---- Reviews: відео-відгуки (звук / play-pause / автоплей у в'юпорті / навігація).
+         initReviews — ідемпотентна: після перебудови списку (з адмінки) її можна викликати
+         повторно; вона перечитує .review з треку і навішує обробники наново. ---- */
+  function initReviews() {
     var track = document.getElementById('reviews-track');
     if (!track) return;
     var next = document.getElementById('reviews-next');
@@ -312,11 +351,17 @@
       });
     }
     if (count > 1) {
-      if (next) next.addEventListener('click', function () { go(i + 1); });
-      if (prev) prev.addEventListener('click', function () { go(i - 1); });
+      if (next) next.onclick = function () { go(i + 1); };
+      if (prev) prev.onclick = function () { go(i - 1); };
       go(0);
+    } else {
+      if (next) next.hidden = true;
+      if (prev) prev.hidden = true;
+      track.style.transform = 'translateX(0%)';
     }
-  })();
+  }
+  window.__initReviews = initReviews;
+  initReviews();
 
   /* ---- Кнопки «Замовити» відкривають модалку замовлення (див. order.js) ---- */
   /*    data-pick-type / data-pick-caliber / data-open-order обробляє order.js    */

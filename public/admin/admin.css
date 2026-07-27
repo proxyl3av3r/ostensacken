@@ -95,6 +95,12 @@ select.status[data-s="В роботі"]{border-color:var(--accent);color:var(--a
 .gadd{flex:0 0 auto;width:120px;height:120px;border:2px dashed var(--line-strong);background:var(--bg);display:grid;place-items:center;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s var(--ease);}
 .gadd:hover{border-color:var(--accent);color:var(--accent-dark);}
 .gadd.is-busy{opacity:.5;pointer-events:none;}
+/* Відео-відгуки: прев'ю-плитки (вертикальні кліпи) */
+.gphoto--vid{width:110px;height:180px;background:#000;cursor:pointer;}
+.gphoto--vid video{width:100%;height:100%;object-fit:cover;display:block;}
+.gphoto__num{position:absolute;top:4px;left:4px;min-width:20px;height:20px;padding:0 5px;display:grid;place-items:center;background:rgba(1,2,3,.72);color:#fff;font-size:12px;font-weight:700;}
+.revbar{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;}
+#reviews-strip .gadd{width:110px;height:180px;}
 
 /* ---------- Фото (одиночні) ---------- */
 .imggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}

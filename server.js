@@ -67,8 +67,13 @@ app.use((req, res, next) => {
 /* ---------- Парсери тіла: маленький ліміт скрізь, більший — лише на аплоуд ---------- */
 const jsonBig = express.json({ limit: '12mb' });   // base64 6 МБ зображення ≈ 8 МБ + запас
 const jsonSmall = express.json({ limit: '32kb' });
+const rawVideo = express.raw({ type: () => true, limit: '70mb' });  // відео-відгук вантажимо як бінарник (без base64-роздування)
 const BIG_BODY_PATHS = ['/api/admin/upload', '/api/admin/gallery/add'];
-app.use((req, res, next) => (BIG_BODY_PATHS.indexOf(req.path) >= 0 ? jsonBig : jsonSmall)(req, res, next));
+const RAW_VIDEO_PATHS = ['/api/admin/reviews/add'];
+app.use((req, res, next) => {
+  if (RAW_VIDEO_PATHS.indexOf(req.path) >= 0) return rawVideo(req, res, next);
+  return (BIG_BODY_PATHS.indexOf(req.path) >= 0 ? jsonBig : jsonSmall)(req, res, next);
+});
 
 /* ---------- Валідація/санітизація замовлення (дзеркалить клієнтську) ---------- */
 function clean(s) {
@@ -332,6 +337,20 @@ const IMG_TYPES = {
 };
 const MAX_IMG_BYTES = 6 * 1024 * 1024;
 
+/* ---------- Відео-відгуки (бінарний аплоуд, перевірка сигнатури) ---------- */
+const VIDEO_TYPES = {
+  'video/mp4': { ext: 'mp4', magic: (b) => b.length > 12 && b.slice(4, 8).toString('ascii') === 'ftyp' },
+  'video/webm': { ext: 'webm', magic: (b) => b.length > 4 && b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3 }
+};
+const MAX_VIDEO_BYTES = 64 * 1024 * 1024;
+const VIDEO_UPLOADS_DIR = path.join(PUBLIC_DIR, 'videos', 'uploads');
+function saveVideoFile(buf, ext) {
+  if (!fs.existsSync(VIDEO_UPLOADS_DIR)) fs.mkdirSync(VIDEO_UPLOADS_DIR, { recursive: true });
+  const fname = 'review-' + crypto.randomBytes(6).toString('hex') + '.' + ext;
+  fs.writeFileSync(path.join(VIDEO_UPLOADS_DIR, fname), buf);
+  return 'videos/uploads/' + fname;
+}
+
 // Декодує data-URL, валідує тип/розмір/сигнатуру. Повертає {buf,ext} або {error}.
 function decodeImage(dataUrl) {
   const m = /^data:([^;,]+);base64,(.+)$/s.exec(String(dataUrl || ''));
@@ -354,8 +373,9 @@ function saveImageFile(buf, ext, prefix) {
 }
 // Видаляє файл, лише якщо він у uploads (не чіпаємо базові ассети репозиторію).
 function removeUploadedFile(rel) {
-  if (rel && String(rel).indexOf('images/uploads/') === 0) {
-    fs.unlink(path.join(PUBLIC_DIR, rel), () => {});
+  const r = String(rel || '');
+  if (r.indexOf('images/uploads/') === 0 || r.indexOf('videos/uploads/') === 0) {
+    fs.unlink(path.join(PUBLIC_DIR, r), () => {});
   }
 }
 
@@ -422,6 +442,44 @@ app.post('/api/admin/stock/remove', requireAdmin, requireCsrf, (req, res) => {
     res.json({ success: true, stock: stock });
   } catch (e) {
     res.status(400).json({ error: e.message || 'Не вдалося видалити' });
+  }
+});
+
+/* --- Відео-відгуки: ДОДАТИ (raw-бінарник у тілі, тип у Content-Type) --- */
+app.post('/api/admin/reviews/add', requireAdmin, requireCsrf, (req, res) => {
+  const ct = String(req.headers['content-type'] || '').split(';')[0].trim();
+  const spec = VIDEO_TYPES[ct];
+  if (!spec) return res.status(400).json({ error: 'Дозволені лише MP4 або WEBM' });
+  const buf = req.body;
+  if (!Buffer.isBuffer(buf) || !buf.length) return res.status(400).json({ error: 'Порожній файл' });
+  if (buf.length > MAX_VIDEO_BYTES) return res.status(400).json({ error: 'Відео завелике (максимум 64 МБ)' });
+  if (!spec.magic(buf)) return res.status(400).json({ error: 'Вміст файлу не відповідає відео' });
+  try {
+    const rel = saveVideoFile(buf, spec.ext);
+    const reviews = content.addReview(rel);
+    res.json({ success: true, reviews: reviews });
+  } catch (e) {
+    console.error('[reviews] помилка:', e.message);
+    res.status(400).json({ error: e.message || 'Не вдалося додати відео' });
+  }
+});
+// Відео-відгуки: ВИДАЛИТИ за індексом
+app.post('/api/admin/reviews/remove', requireAdmin, requireCsrf, (req, res) => {
+  try {
+    const out = content.removeReview(req.body && req.body.index);
+    removeUploadedFile(out.removed);
+    res.json({ success: true, reviews: out.reviews });
+  } catch (e) {
+    res.status(400).json({ error: e.message || 'Не вдалося видалити' });
+  }
+});
+// Відео-відгуки: скільки показувати на сайті (limit=0 → усі)
+app.post('/api/admin/reviews/limit', requireAdmin, requireCsrf, (req, res) => {
+  try {
+    const reviews = content.setReviewsLimit(req.body && req.body.limit);
+    res.json({ success: true, reviews: reviews });
+  } catch (e) {
+    res.status(400).json({ error: e.message || 'Не вдалося зберегти' });
   }
 });
 

@@ -185,6 +185,7 @@
       fillTexts(c.texts || {});
       renderGalleries(c.galleries || {});
       renderImages(c.images || {});
+      renderReviews(c.reviews || {});
       renderStock(c.stock || {});
     }).catch(function () {});
   }
@@ -417,6 +418,83 @@
       grid.appendChild(card);
     });
   }
+
+  /* --- Відео-відгуки (завантажити / видалити / скільки показувати) --- */
+  function uploadVideo(file, cb) {
+    // Бінарний аплоуд: тіло — сам файл, тип у Content-Type (без base64-роздування).
+    fetch('/api/admin/reviews/add', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': CSRF || '', 'Content-Type': file.type || 'video/mp4' },
+      body: file
+    }).then(function (r) {
+      return r.json().then(function (d) { return { ok: r.ok, status: r.status, d: d }; });
+    }).then(cb).catch(function () { cb({ ok: false, status: 0, d: { error: 'Помилка звʼязку' } }); });
+  }
+
+  function renderReviews(reviews) {
+    var videos = Array.isArray(reviews.videos) ? reviews.videos : [];
+    var limit = parseInt(reviews.limit, 10) || 0;
+
+    // Селект «скільки показувати»: 0 = усі
+    var sel = document.getElementById('rev-limit');
+    if (sel) {
+      var opts = '<option value="0">Всі (' + videos.length + ')</option>';
+      for (var n = 1; n <= videos.length; n++) opts += '<option value="' + n + '">' + n + '</option>';
+      sel.innerHTML = opts;
+      sel.value = String(Math.min(limit, videos.length));
+    }
+
+    var strip = document.getElementById('reviews-strip'); if (!strip) return;
+    strip.innerHTML = '';
+    videos.forEach(function (src, idx) {
+      var cell = document.createElement('div'); cell.className = 'gphoto gphoto--vid';
+      var v = document.createElement('video');
+      v.src = '/' + String(src).replace(/^\/+/, '') + '#t=0.1';   // #t — показати перший кадр як прев'ю
+      v.muted = true; v.loop = true; v.preload = 'metadata'; v.setAttribute('playsinline', '');
+      v.addEventListener('mouseenter', function () { v.play().catch(function () {}); });
+      v.addEventListener('mouseleave', function () { v.pause(); });
+      var num = document.createElement('span'); num.className = 'gphoto__num'; num.textContent = (idx + 1);
+      var del = document.createElement('button'); del.className = 'gphoto__del'; del.type = 'button';
+      del.title = 'Видалити'; del.textContent = '✕';
+      del.addEventListener('click', function () {
+        if (!confirm('Видалити це відео?')) return;
+        del.disabled = true;
+        postJSON('/api/admin/reviews/remove', { index: idx }).then(function (res) {
+          if (res.ok && res.d.success) { renderReviews(res.d.reviews); toast('Відео видалено', true); }
+          else if (res.status === 401) show('login');
+          else { toast(res.d.error || 'Помилка', false); del.disabled = false; }
+        }).catch(function () { del.disabled = false; });
+      });
+      cell.appendChild(v); cell.appendChild(num); cell.appendChild(del); strip.appendChild(cell);
+    });
+
+    var add = document.createElement('label'); add.className = 'gadd';
+    add.innerHTML = '<span>+ Завантажити відео</span><input type="file" accept="video/mp4,video/webm" hidden />';
+    var input = add.querySelector('input');
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0]; if (!file) return;
+      if (file.size > 64 * 1024 * 1024) { toast('Відео завелике (макс 64 МБ)', false); input.value = ''; return; }
+      add.classList.add('is-busy');
+      uploadVideo(file, function (res) {
+        if (res.ok && res.d.success) { renderReviews(res.d.reviews); toast('Відео додано', true); }
+        else if (res.status === 401) show('login');
+        else toast(res.d.error || 'Помилка', false);
+        add.classList.remove('is-busy');
+      });
+      input.value = '';
+    });
+    strip.appendChild(add);
+  }
+
+  var revLimitSave = document.getElementById('rev-limit-save');
+  if (revLimitSave) revLimitSave.addEventListener('click', function () {
+    var n = parseInt(document.getElementById('rev-limit').value, 10) || 0;
+    postJSON('/api/admin/reviews/limit', { limit: n }).then(function (res) {
+      if (res.ok && res.d.success) { renderReviews(res.d.reviews); toast('Збережено: показувати ' + (n ? n : 'усі'), true); }
+      else if (res.status === 401) show('login');
+      else toast(res.d.error || 'Помилка', false);
+    });
+  });
 
   checkSession();
 })();

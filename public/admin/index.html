@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Адмін-панель — Osten-Sacken</title>
-  <link rel="icon" href="../favicon.svg?v=8" type="image/svg+xml" />
-  <link rel="stylesheet" href="../css/fonts.css?v=8" />
-  <link rel="stylesheet" href="./admin.css?v=8" />
+  <link rel="icon" href="../favicon.svg?v=9" type="image/svg+xml" />
+  <link rel="stylesheet" href="../css/fonts.css?v=9" />
+  <link rel="stylesheet" href="./admin.css?v=9" />
 </head>
 <body>
 
@@ -38,6 +38,7 @@
       <button class="tab" data-tab="faq">FAQ</button>
       <button class="tab" data-tab="texts">Тексти</button>
       <button class="tab" data-tab="images">Фото</button>
+      <button class="tab" data-tab="reviews">Відгуки</button>
       <button class="tab" data-tab="stock">Наявність</button>
     </nav>
 
@@ -102,6 +103,20 @@
       <div class="imggrid" id="imggrid"></div>
     </section>
 
+    <!-- Відео-відгуки -->
+    <section class="panel" data-panel="reviews" hidden>
+      <p class="panel__hint">Відео-відгуки для каруселі на сайті. MP4 або WEBM, до 64 МБ. Порядок показу — як завантажені (наведи на прев'ю, щоб відтворити).</p>
+      <div class="revbar">
+        <div class="field2" style="margin:0;max-width:260px">
+          <label>Скільки показувати на сайті</label>
+          <select id="rev-limit"></select>
+        </div>
+        <button class="btn btn--accent" id="rev-limit-save" type="button">Зберегти кількість</button>
+      </div>
+      <h3 class="panel__h" style="margin-top:20px">Відео</h3>
+      <div class="gstrip" id="reviews-strip"></div>
+    </section>
+
     <!-- Наявність -->
     <section class="panel" data-panel="stock" hidden>
       <p class="panel__hint">Наявність за конкретною комбінацією параметрів. У вікні замовлення клієнт побачить «В наявності: N шт», якщо його вибір збігається із записом нижче. Решта — «виготовимо під замовлення».</p>
@@ -121,6 +136,6 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="./admin.js?v=8"></script>
+  <script src="./admin.js?v=9"></script>
 </body>
 </html>
