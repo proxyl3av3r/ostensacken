@@ -305,14 +305,14 @@
 
   /* --- Тексти --- */
   function fillTexts(t) {
-    ['hero_subtitle', 'about_text', 'email', 'phone'].forEach(function (k) {
+    ['site_title', 'hero_subtitle', 'about_text', 'email', 'phone'].forEach(function (k) {
       var el = document.getElementById('t-' + k);
       if (el) el.value = t[k] || '';
     });
   }
   document.getElementById('texts-save').addEventListener('click', function () {
     var texts = {};
-    ['hero_subtitle', 'about_text', 'email', 'phone'].forEach(function (k) {
+    ['site_title', 'hero_subtitle', 'about_text', 'email', 'phone'].forEach(function (k) {
       texts[k] = document.getElementById('t-' + k).value;
     });
     postJSON('/api/admin/content/texts', { texts: texts }).then(function (res) {

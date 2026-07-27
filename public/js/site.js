@@ -21,6 +21,10 @@
     function applyContent(c) {
       // Тексти
       if (c.texts) {
+        // Тайтл сторінки (вкладка браузера / SEO) — керується з адмінки
+        if (typeof c.texts.site_title === 'string' && c.texts.site_title) {
+          document.title = c.texts.site_title;
+        }
         document.querySelectorAll('[data-text]').forEach(function (el) {
           var v = c.texts[el.getAttribute('data-text')];
           if (typeof v === 'string' && v) el.textContent = v;

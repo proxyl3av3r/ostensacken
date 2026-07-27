@@ -324,13 +324,17 @@ a { color:inherit; text-decoration:none; }
   .nav.is-open { display:flex; position:absolute; top:82px; left:0; right:0; flex-direction:column; gap:0; background:var(--bg); border-bottom:1px solid var(--line-strong); padding:8px 20px 16px; z-index:20; }
   .nav.is-open a { padding:14px 0; border-bottom:1px solid var(--line); }
 
-  .hero { min-height:0; display:block; }
-  .hero__inner { display:flex; flex-direction:column; }
-  .hero__content { max-width:none; order:2; }
-  .hero__media { position:static; order:1; width:100%; max-width:420px; height:auto; margin:0 auto 12px; display:flex; justify-content:center; }
-  .hero__img { width:auto; max-width:100%; height:auto; max-height:40vh; }
+  /* Планшет: повнорозмірне фото стрільця (широке, ~16:9) не вміщується поряд із заголовком —
+     при будь-якій ширині планшета його непрозора частина наїжджає на текст і псує читабельність.
+     Тому на планшеті (як і на телефоні) верхнє фото ховаємо, а заголовок отримує повну ширину. */
+  .hero { min-height:0; }
+  .hero__media { display:none; }
+  .hero__content { max-width:none; }
   .types__grid { grid-template-columns:1fr; }
-  /* «3 кроки»: гвинтівку прибираємо (займає забагато місця), текст на всю ширину без обрізання */
+  /* «3 кроки»: гвинтівку прибираємо (займає забагато місця), текст на всю ширину без обрізання.
+     Гвинтівка на десктопі заповнювала низ (padding-bottom:0) — без неї повертаємо відступ,
+     щоб кнопка «Оформити замовлення» не прилипала до наступної секції. */
+  .steps-sec { padding-bottom:70px; }
   .steps-sec__inner { grid-template-columns:1fr; }
   .steps-sec__media { display:none; }
   .steps-sec__text { min-width:0; }
@@ -349,7 +353,7 @@ a { color:inherit; text-decoration:none; }
   .ammo figcaption { font-size:26px; }
   .ammo.is-center figcaption { color:var(--accent); font-size:34px; }
   .ammo__img { min-height:0; height:auto; display:grid; place-items:center; }
-  .ammo__img img, .ammo--flip .ammo__img img { position:static; transform:none; width:100%; height:auto; max-height:210px; object-fit:contain; mix-blend-mode:multiply; }
+  .ammo__img img, .ammo--flip .ammo__img img { position:static; transform:none; width:100%; height:auto; max-height:330px; object-fit:contain; mix-blend-mode:multiply; }
   .ammo--flip .ammo__img img { transform:scaleX(-1); }
   .ammo__cta { max-height:0; }
   .ammo.is-center .ammo__cta { max-height:60px; opacity:1; pointer-events:auto; }
@@ -359,7 +363,7 @@ a { color:inherit; text-decoration:none; }
   .container { padding-inline:20px; }
   /* Hero на мобільному: верхнє фото прибираємо повністю */
   .hero__media { display:none; }
-  .hero { padding-top:48px; }
+  .hero { min-height:0; padding-top:48px; }
 
   .stats__grid { flex-direction:column; gap:16px; text-align:center; align-items:center; }
   .stat { align-items:center; padding:0; width:min(280px,80%); }
