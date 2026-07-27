@@ -288,10 +288,18 @@
   }
 
   var phoneInp = form.elements['phone'];
-  phoneInp.addEventListener('input', function () {
-    phoneInp.value = formatPhone(phoneInp.value);
+  var natPhone = function (v) { var d = String(v).replace(/\D/g, ''); if (d.indexOf('38') === 0) d = d.slice(2); return d.slice(0, 10); };
+  var prevPhone = natPhone(phoneInp.value);
+  phoneInp.addEventListener('input', function (e) {
+    var d = natPhone(phoneInp.value);
+    // Backspace на символі форматування («)» тощо) не прибирає цифру — робимо це вручну,
+    // інакше видалення «застрягає» на +38 (0XX).
+    var deleting = e.inputType && e.inputType.indexOf('delete') === 0;
+    if (deleting && d.length === prevPhone.length && d.length > 0) d = d.slice(0, -1);
+    prevPhone = d;
+    phoneInp.value = formatPhone(d);
     var L = phoneInp.value.length;
-    try { phoneInp.setSelectionRange(L, L); } catch (e) {}
+    try { phoneInp.setSelectionRange(L, L); } catch (e2) {}
     phoneInp.closest('.field').classList.remove('is-invalid');
   });
   form.querySelectorAll('.input').forEach(function (inp) {
