@@ -88,8 +88,8 @@ a { color:inherit; text-decoration:none; }
 /* ---------- Hero (фото прибите до правого краю сторінки, статичне) ---------- */
 .hero { padding:70px 0 50px; position:relative; overflow:hidden; min-height:640px; display:flex; align-items:center; }
 .hero__inner { position:static; width:100%; }
-.hero__content { position:relative; z-index:2; max-width:600px; }
-.hero__title { font-family:var(--font-display); font-weight:400; font-size:clamp(40px,6.2vw,66px); line-height:1.04; letter-spacing:0; text-transform:uppercase; margin:0 0 26px; }
+.hero__content { position:relative; z-index:2; max-width:650px; }
+.hero__title { font-family:var(--font-display); font-weight:400; font-size:clamp(40px,6.2vw,64px); line-height:1.04; letter-spacing:0; text-transform:uppercase; margin:0 0 26px; }
 .hero__subtitle { font-size:clamp(18px,1.9vw,23px); color:var(--muted); max-width:520px; margin:0 0 34px; line-height:1.35; }
 .hero__media { position:absolute; top:0; right:0; height:100%; width:min(56vw,940px); z-index:1;
   display:flex; align-items:center; justify-content:flex-end; overflow:visible; pointer-events:none; }
