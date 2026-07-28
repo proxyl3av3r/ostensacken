@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Адмін-панель — Osten-Sacken</title>
-  <link rel="icon" href="../favicon.svg?v=9" type="image/svg+xml" />
-  <link rel="stylesheet" href="../css/fonts.css?v=9" />
-  <link rel="stylesheet" href="./admin.css?v=9" />
+  <link rel="icon" href="../favicon.svg?v=10" type="image/svg+xml" />
+  <link rel="stylesheet" href="../css/fonts.css?v=10" />
+  <link rel="stylesheet" href="./admin.css?v=10" />
 </head>
 <body>
 
@@ -81,14 +81,11 @@
 
     <!-- Тексти -->
     <section class="panel" data-panel="texts" hidden>
-      <p class="panel__hint">Ключові тексти й контакти.</p>
-      <div class="field2"><label>Тайтл сайту (вкладка браузера / Google)</label><input type="text" id="t-site_title" maxlength="120" /></div>
-      <div class="field2"><label>Підзаголовок Hero</label><textarea id="t-hero_subtitle" rows="3"></textarea></div>
-      <div class="field2"><label>Текст «Про нас»</label><textarea id="t-about_text" rows="4"></textarea></div>
-      <div class="field2"><label>Email</label><input type="text" id="t-email" /></div>
-      <div class="field2"><label>Телефон</label><input type="text" id="t-phone" /></div>
+      <p class="panel__hint">Редагування всіх текстів сайту. Оберіть розділ нижче. У заголовках слово в <b>*зірочках*</b> стає червоним — напр. <code>Актуальна *вартість*</code>.</p>
+      <div class="subtabs" id="text-nav"></div>
+      <div id="text-groups"></div>
       <div class="panel__foot">
-        <button class="btn btn--accent" id="texts-save">Зберегти тексти</button>
+        <button class="btn btn--accent" id="texts-save">Зберегти всі тексти</button>
       </div>
     </section>
 
@@ -136,6 +133,6 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="./admin.js?v=9"></script>
+  <script src="./admin.js?v=10"></script>
 </body>
 </html>

@@ -25,6 +25,68 @@
   var OPT_CALIBER = ['.22 LR', '.223', '5.45', '.30', '.338 LM', '.338 WM'];
   var OPT_THREAD = ['1/2" 28 UNEF', '9/16"24', '1/2"20', '5/8"24', '14х1', '15х1', '16х1', '17х1', '18х1', '24 х 1.5', '3/4"24', '3/4"20', 'Індивідуально'];
   var OPT_COATING = ['Ні', 'Так'];
+  // Усі тексти сайту, згруповані по секціях (під-навігація у вкладці «Тексти»).
+  // Ключі мусять збігатися з data-text в index.html та DEFAULTS.texts у lib/content.js.
+  var TEXT_GROUPS = [
+    { id: 'seo', title: 'Тайтл / SEO', fields: [
+      { k: 'site_title', label: 'Тайтл сайту (вкладка браузера / Google)' }
+    ] },
+    { id: 'hero', title: 'Головний екран', fields: [
+      { k: 'hero_title', label: 'Заголовок (*слово* = червоне)' },
+      { k: 'hero_subtitle', label: 'Підзаголовок', ml: true }
+    ] },
+    { id: 'stats', title: 'Показники', fields: [
+      { k: 'stat1_value', label: 'Показник 1 — значення' },
+      { k: 'stat1_label', label: 'Показник 1 — підпис' },
+      { k: 'stat2_label', label: 'Показник 2 — підпис (число 5500+ анімоване, тут не редагується)' },
+      { k: 'stat3_value', label: 'Показник 3 — значення' },
+      { k: 'stat3_label', label: 'Показник 3 — підпис' }
+    ] },
+    { id: 'types', title: 'Типи глушників', fields: [
+      { k: 'types_title', label: 'Заголовок секції (*слово* = червоне)' },
+      { k: 'prod_standard_title', label: 'Назва — Стандартний' },
+      { k: 'prod_standard_info', label: 'Інфо-плашка — Стандартний', ml: true },
+      { k: 'prod_integrated_title', label: 'Назва — Інтегрований' },
+      { k: 'prod_integrated_info', label: 'Інфо-плашка — Інтегрований', ml: true }
+    ] },
+    { id: 'compat', title: 'Калібри', fields: [
+      { k: 'compat_title', label: 'Заголовок секції (*слово* = червоне)' }
+    ] },
+    { id: 'pricing', title: 'Вартість', fields: [
+      { k: 'pricing_title', label: 'Заголовок секції (*слово* = червоне)' }
+    ] },
+    { id: 'steps', title: '3 кроки', fields: [
+      { k: 'steps_title', label: 'Заголовок (*слово* = червоне)' },
+      { k: 'steps_sub', label: 'Підзаголовок' },
+      { k: 'step1_title', label: 'Крок 1 — заголовок' },
+      { k: 'step1_desc', label: 'Крок 1 — опис', ml: true },
+      { k: 'step2_title', label: 'Крок 2 — заголовок' },
+      { k: 'step2_desc', label: 'Крок 2 — опис', ml: true },
+      { k: 'step3_title', label: 'Крок 3 — заголовок' },
+      { k: 'step3_desc', label: 'Крок 3 — опис', ml: true }
+    ] },
+    { id: 'about', title: 'Про нас', fields: [
+      { k: 'about_title', label: 'Заголовок (*слово* = червоне)' },
+      { k: 'about_brand', label: 'Назва бренду' },
+      { k: 'about_text', label: 'Текст', ml: true }
+    ] },
+    { id: 'reviews', title: 'Відгуки', fields: [
+      { k: 'reviews_title', label: 'Заголовок (*слово* = червоне)' }
+    ] },
+    { id: 'contacts', title: 'Контакти / Питання', fields: [
+      { k: 'order_title', label: 'Заголовок (*слово* = червоне)' },
+      { k: 'order_desc', label: 'Опис', ml: true },
+      { k: 'email', label: 'Email' },
+      { k: 'phone', label: 'Телефон' }
+    ] },
+    { id: 'faq', title: 'FAQ', fields: [
+      { k: 'faq_title', label: 'Заголовок (*слово* = червоне)' }
+    ] }
+  ];
+  var TEXT_KEYS_ALL = TEXT_GROUPS.reduce(function (a, g) {
+    return a.concat(g.fields.map(function (f) { return f.k; }));
+  }, []);
+
   var IMAGE_LABELS = {
     hero: 'Hero — головне фото', 'supp-standard': 'Стандартний глушник (карусель)',
     about: 'Фото «Про нас»', steps: 'Гвинтівка (3 кроки)',
@@ -304,17 +366,51 @@
     });
   });
 
-  /* --- Тексти --- */
+  /* --- Тексти (усі, з під-навігацією по секціях) --- */
+  // Будуємо поля один раз зі схеми; під-таби перемикають видиму групу.
+  function buildTextsUI() {
+    var nav = document.getElementById('text-nav');
+    var wrap = document.getElementById('text-groups');
+    if (!nav || !wrap || nav.dataset.built) return;
+    nav.dataset.built = '1';
+    TEXT_GROUPS.forEach(function (g, gi) {
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'subtab' + (gi === 0 ? ' is-active' : '');
+      btn.textContent = g.title; btn.setAttribute('data-tg', g.id);
+      nav.appendChild(btn);
+
+      var box = document.createElement('div'); box.className = 'tgroup';
+      box.setAttribute('data-tg', g.id); if (gi !== 0) box.hidden = true;
+      g.fields.forEach(function (f) {
+        var field = document.createElement('div'); field.className = 'field2';
+        var lab = document.createElement('label'); lab.textContent = f.label;
+        var input = f.ml ? document.createElement('textarea') : document.createElement('input');
+        if (f.ml) input.rows = 3; else input.type = 'text';
+        input.id = 't-' + f.k;
+        field.appendChild(lab); field.appendChild(input); box.appendChild(field);
+      });
+      wrap.appendChild(box);
+    });
+    nav.addEventListener('click', function (e) {
+      var b = e.target.closest('.subtab'); if (!b) return;
+      var id = b.getAttribute('data-tg');
+      nav.querySelectorAll('.subtab').forEach(function (x) { x.classList.toggle('is-active', x === b); });
+      wrap.querySelectorAll('.tgroup').forEach(function (x) { x.hidden = x.getAttribute('data-tg') !== id; });
+    });
+  }
   function fillTexts(t) {
-    ['site_title', 'hero_subtitle', 'about_text', 'email', 'phone'].forEach(function (k) {
+    buildTextsUI();
+    TEXT_KEYS_ALL.forEach(function (k) {
       var el = document.getElementById('t-' + k);
-      if (el) el.value = t[k] || '';
+      if (el) el.value = (t[k] != null ? t[k] : '');
     });
   }
   document.getElementById('texts-save').addEventListener('click', function () {
+    buildTextsUI();
     var texts = {};
-    ['site_title', 'hero_subtitle', 'about_text', 'email', 'phone'].forEach(function (k) {
-      texts[k] = document.getElementById('t-' + k).value;
+    TEXT_KEYS_ALL.forEach(function (k) {
+      var el = document.getElementById('t-' + k);
+      if (el) texts[k] = el.value;
     });
     postJSON('/api/admin/content/texts', { texts: texts }).then(function (res) {
       if (res.ok && res.d.success) { fillTexts(res.d.texts); toast('Тексти збережено', true); }

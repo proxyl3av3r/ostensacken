@@ -44,7 +44,7 @@
     <section class="hero">
       <div class="container hero__inner">
         <div class="hero__content reveal">
-          <h1 class="hero__title">Титанові глушники <span class="accent">під замовлення</span></h1>
+          <h1 class="hero__title" data-text="hero_title" data-rich>Титанові глушники <span class="accent">під замовлення</span></h1>
           <p class="hero__subtitle" data-text="hero_subtitle">Індивідуальне виготовлення для будь-якого калібру нарізної зброї. Максимальна точність, надійність і бездоганна якість виконання.</p>
           <a href="#order" class="btn btn--primary btn--lg" data-open-order><span class="btn__label">Замовити</span></a>
         </div>
@@ -57,16 +57,16 @@
     <!-- ============ STATS ============ -->
     <section class="stats">
       <div class="container stats__grid">
-        <div class="stat reveal"><span class="stat__value">Для всіх</span><span class="stat__label">Популярних калібрів</span></div>
-        <div class="stat reveal reveal--delay"><span class="stat__value" data-count="5500" data-suffix="+">5500+</span><span class="stat__label">Виконаних замовлень</span></div>
-        <div class="stat reveal reveal--delay2"><span class="stat__value">10+ років</span><span class="stat__label">На ринку України</span></div>
+        <div class="stat reveal"><span class="stat__value" data-text="stat1_value">Для всіх</span><span class="stat__label" data-text="stat1_label">Популярних калібрів</span></div>
+        <div class="stat reveal reveal--delay"><span class="stat__value" data-count="5500" data-suffix="+">5500+</span><span class="stat__label" data-text="stat2_label">Виконаних замовлень</span></div>
+        <div class="stat reveal reveal--delay2"><span class="stat__value" data-text="stat3_value">10+ років</span><span class="stat__label" data-text="stat3_label">На ринку України</span></div>
       </div>
     </section>
 
     <!-- ============ TYPES / CONFIGURATOR ============ -->
     <section class="types section" id="types">
       <div class="container">
-        <h2 class="section__title reveal">Виберіть <span class="accent">тип</span> глушника</h2>
+        <h2 class="section__title reveal" data-text="types_title" data-rich>Виберіть <span class="accent">тип</span> глушника</h2>
         <div class="types__grid">
 
           <!-- Стандартний -->
@@ -86,7 +86,7 @@
               <div class="prod__dots" data-carousel-dots><span class="is-active"></span><span></span><span></span></div>
             </div>
             <div class="prod__body">
-              <h3 class="prod__title">Стандартний</h3>
+              <h3 class="prod__title" data-text="prod_standard_title">Стандартний</h3>
               <dl class="specs">
                 <div class="spec"><dt><svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8.4 9a3.6 3.6 0 0 1 7.2 0" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="14.6" r="6.4" stroke="currentColor" stroke-width="1.6"/></svg>Вага</dt><dd>540г</dd></div>
                 <div class="spec"><dt><svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 2.6v5M21 2.6v5M3 5.1h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="2.6" y="11.3" width="18.8" height="9.4" stroke="currentColor" stroke-width="1.6"/><path d="M6 11.3v4.3M9 11.3v2.9M12 11.3v4.3M15 11.3v2.9M18 11.3v4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Довжина від зрізу ствола</dt><dd>200мм</dd></div>
@@ -101,7 +101,7 @@
                   <button type="button" class="toggle__opt is-on" data-coating="Ні">Ні</button>
                 </div>
               </div>
-              <p class="infobox"><span class="ico-info" aria-hidden="true"></span><span>Характеристики актуальні для глушника у калібрі .223 та .308</span></p>
+              <p class="infobox"><span class="ico-info" aria-hidden="true"></span><span data-text="prod_standard_info">Характеристики актуальні для глушника у калібрі .223 та .308</span></p>
               <button class="btn btn--primary prod__cta" data-pick-type="Стандартний"><span class="btn__label">Замовити</span></button>
             </div>
           </article>
@@ -123,7 +123,7 @@
               <div class="prod__dots" data-carousel-dots><span class="is-active"></span><span></span></div>
             </div>
             <div class="prod__body">
-              <h3 class="prod__title">Інтегрований</h3>
+              <h3 class="prod__title" data-text="prod_integrated_title">Інтегрований</h3>
               <dl class="specs">
                 <div class="spec"><dt><svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8.4 9a3.6 3.6 0 0 1 7.2 0" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="14.6" r="6.4" stroke="currentColor" stroke-width="1.6"/></svg>Вага</dt><dd>780г <span class="spec__note">(+100г покриття)</span></dd></div>
                 <div class="spec"><dt><svg class="ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 2.6v5M21 2.6v5M3 5.1h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="2.6" y="11.3" width="18.8" height="9.4" stroke="currentColor" stroke-width="1.6"/><path d="M6 11.3v4.3M9 11.3v2.9M12 11.3v4.3M15 11.3v2.9M18 11.3v4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Загальна довжина</dt><dd>330мм</dd></div>
@@ -138,7 +138,7 @@
                   <button type="button" class="toggle__opt is-on" data-coating="Ні">Ні</button>
                 </div>
               </div>
-              <p class="infobox"><span class="ico-info" aria-hidden="true"></span><span>Глушник у калібрі .338 робиться у діаметрі 54мм та приблизна вага сягає 1000г</span></p>
+              <p class="infobox"><span class="ico-info" aria-hidden="true"></span><span data-text="prod_integrated_info">Глушник у калібрі .338 робиться у діаметрі 54мм та приблизна вага сягає 1000г</span></p>
               <button class="btn btn--primary prod__cta" data-pick-type="Інтегрований"><span class="btn__label">Замовити</span></button>
             </div>
           </article>
@@ -150,7 +150,7 @@
     <!-- ============ COMPAT / CALIBERS ============ -->
     <section class="compat section" id="compat">
       <div class="container">
-        <h2 class="section__title reveal">Сумісні з усіма популярними <span class="accent">калібрами</span></h2>
+        <h2 class="section__title reveal" data-text="compat_title" data-rich>Сумісні з усіма популярними <span class="accent">калібрами</span></h2>
         <div class="ammo-row reveal" id="ammo-row">
           <figure class="ammo"><figcaption>.22 LR</figcaption><div class="ammo__img"><img src="./images/ammo-22lr.png" alt="Зброя калібру .22 LR" data-img="ammo-22lr" loading="lazy" decoding="async" /></div><button class="btn btn--primary ammo__cta" data-pick-caliber=".22 LR"><span class="btn__label">Замовити</span></button></figure>
           <figure class="ammo ammo--flip"><figcaption>.223</figcaption><div class="ammo__img"><img src="./images/ammo-223.png" alt="Зброя калібру .223" data-img="ammo-223" loading="lazy" decoding="async" /></div><button class="btn btn--primary ammo__cta" data-pick-caliber=".223 Rem"><span class="btn__label">Замовити</span></button></figure>
@@ -164,7 +164,7 @@
     <!-- ============ PRICING ============ -->
     <section class="pricing section" id="pricing">
       <div class="container">
-        <h2 class="section__title reveal">Актуальна <span class="accent">вартість</span></h2>
+        <h2 class="section__title reveal" data-text="pricing_title" data-rich>Актуальна <span class="accent">вартість</span></h2>
         <div class="ptable reveal" data-prices>
           <div class="prow prow--head">
             <div class="pcell">Калібр</div>
@@ -183,8 +183,8 @@
     <section class="steps-sec section" id="steps">
       <div class="container">
         <div class="steps-sec__head reveal">
-          <h2 class="steps-sec__title">3 простих <span class="accent">кроки</span></h2>
-          <p class="steps-sec__sub">Як зробити замовлення?</p>
+          <h2 class="steps-sec__title" data-text="steps_title" data-rich>3 простих <span class="accent">кроки</span></h2>
+          <p class="steps-sec__sub" data-text="steps_sub">Як зробити замовлення?</p>
         </div>
         <div class="steps-sec__inner">
         <div class="steps-sec__media reveal">
@@ -192,9 +192,9 @@
         </div>
         <div class="steps-sec__text reveal reveal--delay">
           <ol class="steps">
-            <li class="step"><span class="step__num">1</span><div class="step__body"><h3 class="step__title">Оберіть потрібний глушник</h3><p class="step__desc">Виберіть тип глушника (стандартний або інтегрований), потрібний калібр та хід різьби.</p></div></li>
-            <li class="step"><span class="step__num">2</span><div class="step__body"><h3 class="step__title">Заповніть контактні дані</h3><p class="step__desc">Вкажіть ваше ім'я, номер телефону та адресу електронної пошти для зворотного зв'язку.</p></div></li>
-            <li class="step"><span class="step__num">3</span><div class="step__body"><h3 class="step__title">Підтвердьте замовлення</h3><p class="step__desc">Перевірте правильність введених даних та натисніть кнопку «Замовити». Після отримання заявки ми зв'яжемося з вами для підтвердження та уточнення всіх деталей.</p></div></li>
+            <li class="step"><span class="step__num">1</span><div class="step__body"><h3 class="step__title" data-text="step1_title">Оберіть потрібний глушник</h3><p class="step__desc" data-text="step1_desc">Виберіть тип глушника (стандартний або інтегрований), потрібний калібр та хід різьби.</p></div></li>
+            <li class="step"><span class="step__num">2</span><div class="step__body"><h3 class="step__title" data-text="step2_title">Заповніть контактні дані</h3><p class="step__desc" data-text="step2_desc">Вкажіть ваше ім'я, номер телефону та адресу електронної пошти для зворотного зв'язку.</p></div></li>
+            <li class="step"><span class="step__num">3</span><div class="step__body"><h3 class="step__title" data-text="step3_title">Підтвердьте замовлення</h3><p class="step__desc" data-text="step3_desc">Перевірте правильність введених даних та натисніть кнопку «Замовити». Після отримання заявки ми зв'яжемося з вами для підтвердження та уточнення всіх деталей.</p></div></li>
           </ol>
           <a href="#order" class="btn btn--primary btn--lg" data-open-order><span class="btn__label">Оформити замовлення</span></a>
         </div>
@@ -205,7 +205,7 @@
     <!-- ============ ABOUT (dark) ============ -->
     <section class="about section" id="about">
       <div class="container">
-        <h2 class="section__title reveal">Про <span class="accent">нас</span></h2>
+        <h2 class="section__title reveal" data-text="about_title" data-rich>Про <span class="accent">нас</span></h2>
         <div class="about__card reveal">
           <div class="about__media">
             <div class="about__target" aria-hidden="true">
@@ -217,7 +217,7 @@
             <img src="./images/about-soldier.png" alt="Стрілець Osten-Sacken" class="about__img" data-img="about" loading="lazy" decoding="async" />
           </div>
           <div class="about__content">
-            <h3 class="about__brand">osten - sacken</h3>
+            <h3 class="about__brand" data-text="about_brand">osten - sacken</h3>
             <p class="about__text" data-text="about_text">Ми спеціалізуємося на індивідуальному виготовленні титанових глушників для нарізної зброї. Кожен виріб проєктується відповідно до параметрів зброї та вимог замовника, проходить контроль якості й створюється з акцентом на ефективність, довговічність і бездоганне виконання.</p>
             <div class="contacts contacts--light">
               <a href="mailto:info@ostensacken.com" class="contact" data-contact="email"><img src="./images/icon-mail.svg" class="contact__ico" alt="" /> <span data-contact-text>info@ostensacken.com</span></a>
@@ -231,7 +231,7 @@
     <!-- ============ REVIEWS ============ -->
     <section class="reviews section" id="reviews">
       <div class="container">
-        <h2 class="section__title reveal"><span class="accent">Відгуки</span> клієнтів</h2>
+        <h2 class="section__title reveal" data-text="reviews_title" data-rich><span class="accent">Відгуки</span> клієнтів</h2>
         <div class="reviews__viewport reveal">
           <div class="reviews__track" id="reviews-track">
             <!-- Відео-відгуки: файли у public/videos (review-1.mp4 …). Щоб додати ще —
@@ -299,8 +299,8 @@
     <section class="order section" id="order">
       <div class="container order__inner">
         <div class="order__text reveal">
-          <h2 class="order__title">Залишились <span class="accent">питання?</span></h2>
-          <p class="order__desc">Зв'яжіться з нами — ми допоможемо підібрати оптимальне рішення, відповімо на всі технічні питання та проконсультуємо щодо замовлення.</p>
+          <h2 class="order__title" data-text="order_title" data-rich>Залишились <span class="accent">питання?</span></h2>
+          <p class="order__desc" data-text="order_desc">Зв'яжіться з нами — ми допоможемо підібрати оптимальне рішення, відповімо на всі технічні питання та проконсультуємо щодо замовлення.</p>
           <div class="contacts">
             <a href="mailto:info@ostensacken.com" class="contact"><img src="./images/icon-mail.svg" class="contact__ico contact__ico--dark" alt="" /> info@ostensacken.com</a>
             <a href="tel:+380507770238" class="contact"><img src="./images/icon-phone.svg" class="contact__ico contact__ico--dark" alt="" /> +380-50-777-0238</a>
@@ -340,7 +340,7 @@
     <!-- ============ FAQ ============ -->
     <section class="faq section" id="faq">
       <div class="container">
-        <h2 class="section__title reveal">Часті <span class="accent">питання</span></h2>
+        <h2 class="section__title reveal" data-text="faq_title" data-rich>Часті <span class="accent">питання</span></h2>
         <div class="faq__list reveal" data-faq>
           <details class="faq__item"><summary class="faq__q">Чи виготовляєте ви глушники під індивідуальні параметри?</summary><div class="faq__a">Так, ми можемо виготовити глушник під конкретний калібр, різьбу та вимоги замовника. Індивідуальні замовлення обговорюються окремо.</div></details>
           <details class="faq__item"><summary class="faq__q">У чому різниця між стандартним та інтегрованим глушником?</summary><div class="faq__a">Стандартний глушник встановлюється на дулову частину зброї, тоді як інтегрований є частиною конструкції ствола і забезпечує більш компактне рішення.</div></details>
@@ -531,6 +531,6 @@
   </div>
 
   <script src="./js/order.js?v=9"></script>
-  <script src="./js/site.js?v=9"></script>
+  <script src="./js/site.js?v=10"></script>
 </body>
 </html>

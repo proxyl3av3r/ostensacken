@@ -27,7 +27,8 @@
         }
         document.querySelectorAll('[data-text]').forEach(function (el) {
           var v = c.texts[el.getAttribute('data-text')];
-          if (typeof v === 'string' && v) el.textContent = v;
+          if (typeof v !== 'string' || !v) return;
+          if (el.hasAttribute('data-rich')) setRichText(el, v); else el.textContent = v;
         });
         // Контакти (href + видимий текст)
         var email = c.texts.email, phone = c.texts.phone;
@@ -89,6 +90,20 @@
       el.className = cls; el.setAttribute('data-label', label);
       el.textContent = text == null ? '' : text;
       return el;
+    }
+    /* Rich-заголовок: слово(а) в *зірочках* → <span class="accent"> (червоний).
+       Будуємо через DOM (textNode / span.textContent) — без innerHTML, тож XSS неможливий. */
+    function setRichText(el, val) {
+      while (el.firstChild) el.removeChild(el.firstChild);
+      String(val).split('*').forEach(function (seg, idx) {
+        if (seg === '') return;
+        if (idx % 2 === 1) {
+          var s = document.createElement('span'); s.className = 'accent'; s.textContent = seg;
+          el.appendChild(s);
+        } else {
+          el.appendChild(document.createTextNode(seg));
+        }
+      });
     }
     /* Поточний стан тумблера «Гумове покриття» на картці */
     function currentCoating(product) {
